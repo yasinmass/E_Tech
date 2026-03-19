@@ -26,7 +26,15 @@
       <tbody>
         {% if sites %}
         {% for site in sites %}
-        <tr>
+        <tr onclick="openSiteModal(this)" style="cursor:pointer;"
+          data-name="{{ site.name }}"
+          data-owner="{{ site.owner_name }}"
+          data-phone="{{ site.owner_phone }}"
+          data-address="{{ site.address }}"
+          data-status="{{ site.status }}"
+          data-location="{{ site.location|default:'' }}"
+          data-photo="{% if site.site_photo %}{{ site.site_photo.url }}{% endif %}"
+          data-owner-photo="{% if site.owner_photo %}{{ site.owner_photo.url }}{% endif %}">
           <td>
             <div style="display:flex; align-items:center; gap:10px;">
               {% if site.site_photo %}
@@ -57,8 +65,8 @@
             {% endif %}
           </td>
           <td style="white-space:nowrap;">
-            <a href="{% url 'edit_site' site.id %}" class="btn btn-sm btn-secondary">✏️ Edit</a>
-            <a href="{% url 'delete_site' site.id %}" class="btn btn-sm btn-danger" style="margin-left:4px;">🗑️</a>
+            <a href="{% url 'edit_site' site.id %}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation()">✏️ Edit</a>
+            <a href="{% url 'delete_site' site.id %}" class="btn btn-sm btn-danger" style="margin-left:4px;" onclick="event.stopPropagation()">🗑️</a>
           </td>
         </tr>
         {% endfor %}
@@ -74,5 +82,112 @@
     </table>
   </div>
 </div>
+
+<!-- Site Modal -->
+<div id="siteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:540px;max-width:95%;overflow:hidden;position:relative;">
+
+    <!-- Header with site photo -->
+    <div style="background:#1A73E8;padding:20px 24px;display:flex;align-items:center;gap:16px;position:relative;">
+      <img id="sm-site-photo" style="width:56px;height:56px;border-radius:10px;object-fit:cover;display:none;">
+      <div id="sm-site-initials" style="width:56px;height:56px;border-radius:10px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;">🏗️</div>
+      <div>
+        <div id="sm-name" style="font-size:18px;font-weight:600;color:#fff;"></div>
+        <div id="sm-status-header" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
+      </div>
+      <button onclick="closeSiteModal()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;">×</button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:20px 24px;">
+
+      <!-- Site details grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Address</div>
+          <div id="sm-address" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
+        </div>
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Status</div>
+          <div id="sm-status" style="font-size:13px;font-weight:500;"></div>
+        </div>
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Owner Name</div>
+          <div id="sm-owner" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
+        </div>
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Owner Phone</div>
+          <div id="sm-phone" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
+        </div>
+      </div>
+
+      <!-- Owner photo -->
+      <div id="sm-owner-photo-wrap" style="display:none;margin-bottom:16px;">
+        <div style="font-size:11px;color:#5A6A85;text-transform:uppercase;margin-bottom:6px;">Owner Photo</div>
+        <img id="sm-owner-photo" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #DDEEFF;">
+      </div>
+
+      <!-- Location link -->
+      <div id="sm-location-wrap" style="display:none;margin-bottom:16px;">
+        <a id="sm-location-link" href="#" target="_blank"
+          style="display:inline-flex;align-items:center;gap:6px;background:#EBF4FF;color:#1565C0;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;">
+          📍 View on Google Maps
+        </a>
+      </div>
+
+      <button onclick="closeSiteModal()" style="width:100%;padding:10px;border-radius:8px;background:#1A73E8;color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openSiteModal(row) {
+  const name = row.dataset.name;
+  const status = row.dataset.status;
+  document.getElementById('sm-name').textContent = name;
+  document.getElementById('sm-owner').textContent = row.dataset.owner;
+  document.getElementById('sm-phone').textContent = row.dataset.phone;
+  document.getElementById('sm-address').textContent = row.dataset.address;
+  document.getElementById('sm-status-header').textContent = status;
+
+  const statusEl = document.getElementById('sm-status');
+  statusEl.textContent = status;
+  if(status === 'Completed') statusEl.style.color = '#2E7D32';
+  else if(status === 'In Progress') statusEl.style.color = '#1565C0';
+  else statusEl.style.color = '#F57C00';
+
+  const photo = row.dataset.photo;
+  if(photo) {
+    document.getElementById('sm-site-photo').src = photo;
+    document.getElementById('sm-site-photo').style.display = 'block';
+    document.getElementById('sm-site-initials').style.display = 'none';
+  } else {
+    document.getElementById('sm-site-photo').style.display = 'none';
+    document.getElementById('sm-site-initials').style.display = 'flex';
+  }
+
+  const ownerPhoto = row.dataset.ownerPhoto;
+  if(ownerPhoto) {
+    document.getElementById('sm-owner-photo').src = ownerPhoto;
+    document.getElementById('sm-owner-photo-wrap').style.display = 'block';
+  } else {
+    document.getElementById('sm-owner-photo-wrap').style.display = 'none';
+  }
+
+  const location = row.dataset.location;
+  if(location) {
+    document.getElementById('sm-location-link').href = location;
+    document.getElementById('sm-location-wrap').style.display = 'block';
+  } else {
+    document.getElementById('sm-location-wrap').style.display = 'none';
+  }
+
+  document.getElementById('siteModal').style.display = 'flex';
+}
+
+function closeSiteModal() {
+  document.getElementById('siteModal').style.display = 'none';
+}
+</script>
 
 {% endblock %}
