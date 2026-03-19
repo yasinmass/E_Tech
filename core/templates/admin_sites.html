@@ -19,8 +19,8 @@
           <th>Owner Name</th>
           <th>Owner Phone</th>
           <th>Address</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th>Task Progress</th>
+          <th style="min-width:340px;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -58,29 +58,49 @@
           <td style="color:var(--text-secondary);">{{ site.owner_phone|default:"—" }}</td>
           <td style="color:var(--text-secondary); font-size:13px;">{{ site.address|default:"—" }}</td>
           <td>
-            {% if site.status == 'Completed' %}
-            <span class="badge badge-done">Completed</span>
-            {% elif site.status == 'In Progress' %}
-            <span class="badge badge-pending">In Progress</span>
+            {% if site.total_tasks == 0 %}
+              <span style="font-size:12px;color:#B4B2A9;">No tasks yet</span>
             {% else %}
-            <span class="badge badge-absent">Not Started</span>
+              <div style="margin-bottom:5px;">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#5A6A85;margin-bottom:3px;">
+                  <span>{{ site.done_tasks }}/{{ site.total_tasks }} done</span>
+                  <span style="font-weight:600;color:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1565C0{% else %}#F57C00{% endif %};">{{ site.task_pct }}%</span>
+                </div>
+                <div style="height:6px;background:#EBF4FF;border-radius:3px;overflow:hidden;width:140px;">
+                  <div style="height:100%;border-radius:3px;width:{{ site.task_pct }}%;background:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1A73E8{% else %}#F57C00{% endif %};"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                {% if site.pending_tasks %}<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#FFF8E1;color:#F57C00;">{{ site.pending_tasks }} Pending</span>{% endif %}
+                {% if site.inprogress_tasks %}<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E3F2FD;color:#1565C0;">{{ site.inprogress_tasks }} In Progress</span>{% endif %}
+                {% if site.done_tasks %}<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E8F5E9;color:#2E7D32;">{{ site.done_tasks }} Done</span>{% endif %}
+              </div>
             {% endif %}
           </td>
-          <td style="white-space:nowrap;">
-            <a href="{% url 'edit_site' site.id %}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation()">✏️ Edit</a>
-            <a href="{% url 'delete_site' site.id %}" class="btn btn-sm btn-danger" style="margin-left:4px;" onclick="event.stopPropagation()">🗑️</a>
-            <button
-              data-site-id="{{ site.id }}"
-              data-site-name="{{ site.name }}"
-              onclick="event.stopPropagation(); openTaskModal(this)"
-              style="margin-left:4px;background:#534AB7;color:#fff;padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;">
-              📋 Assign Task
-            </button>
-            <a href="{% url 'site_tasks' site.id %}"
-              onclick="event.stopPropagation()"
-              style="margin-left:4px;background:#E3F2FD;color:#1565C0;padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
-              📌 Track Tasks
-            </a>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
+
+              <a href="{% url 'edit_site' site.id %}"
+                onclick="event.stopPropagation()"
+                style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#F1EFE8;color:#444441;text-decoration:none;white-space:nowrap;">
+                ✏️ Edit
+              </a>
+
+              <button
+                data-site-id="{{ site.id }}"
+                data-site-name="{{ site.name }}"
+                onclick="event.stopPropagation(); openTaskModal(this)"
+                style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#534AB7;color:#fff;border:none;cursor:pointer;white-space:nowrap;">
+                📋 Assign Task
+              </button>
+
+              <a href="{% url 'site_tasks' site.id %}"
+                onclick="event.stopPropagation()"
+                style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#E3F2FD;color:#1565C0;text-decoration:none;white-space:nowrap;">
+                📌 Track Tasks
+              </a>
+
+            </div>
           </td>
         </tr>
         {% endfor %}

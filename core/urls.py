@@ -70,6 +70,8 @@ urlpatterns = [
 
     # ── Profile Settings — all roles (Feature 5) ──────────────────────────────
     path('profile/', views.profile_settings, name='profile_settings'),
+    path('history/', views.activity_history, name='activity_history'),
+
 
     # ── Products / Inventory ───────────────────────────────────────────────────
     path('products/', views.products_list, name='products_list'),

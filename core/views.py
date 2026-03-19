@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 import json
 from datetime import date
-from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product, Tool
+from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product, Tool, ActivityLog
 from .forms import (
     AddWorkerForm, CustomerCreationForm, WorkerEditForm,
     SiteForm, SiteEditForm, TaskForm, AttendanceForm, WorkUpdateForm, BillForm,
@@ -24,6 +24,13 @@ def role_required(role):
         wrapper.__name__ = view_func.__name__
         return wrapper
     return decorator
+
+def log_activity(user, action, category):
+    """Create an ActivityLog entry — silently ignores errors so it never breaks a view."""
+    try:
+        ActivityLog.objects.create(user=user, action=action, category=category)
+    except Exception:
+        pass
 
 # ---------- Auth Views ----------
 def login_view(request):
@@ -118,6 +125,7 @@ def add_worker(request):
                 id_proof=form.cleaned_data.get('id_proof'),
                 photo=form.cleaned_data.get('photo'),
             )
+            log_activity(request.user, f"Added new worker: {user.get_full_name() or user.username}", 'worker')
             return redirect('admin_workers')
     else:
         form = AddWorkerForm()
@@ -148,6 +156,7 @@ def add_site(request):
             site.customer = user
             site.status = 'In Progress'
             site.save()
+            log_activity(request.user, f"Added new site: {site.name}", 'site')
             messages.success(request, f'Site "{site.name}" added and owner login created.')
             return redirect('admin_sites')
     else:
@@ -191,6 +200,7 @@ def upload_bill(request):
             bill = form.save(commit=False)
             bill.uploaded_by = request.user
             bill.save()
+            log_activity(request.user, f"Uploaded bill: ₹{bill.amount} — {bill.site.name}", 'bill')
             return redirect('admin_dashboard')
     else:
         form = BillForm()
@@ -251,6 +261,7 @@ def worker_mark_attendance(request):
             messages.error(request, f'Attendance for "{slot_label}" has already been marked for today.')
         else:
             Attendance.objects.create(worker=request.user, slot=slot, is_present=is_present)
+            log_activity(request.user, f"Marked own attendance — {slot} — {'Present' if is_present else 'Absent'}", 'attendance')
     return redirect('worker_dashboard')
 
 @role_required('worker')
@@ -272,6 +283,7 @@ def worker_upload_update(request):
             update = form.save(commit=False)
             update.worker = request.user
             update.save()
+            log_activity(request.user, f"Uploaded work update for site: {update.site.name}", 'update')
             return redirect('worker_dashboard')
     else:
         form = WorkUpdateForm()
@@ -330,12 +342,26 @@ def admin_mark_worker_ajax(request):
                     slot=slot_key,
                     defaults={'is_present': is_present}
                 )
+                log_activity(request.user, f"Marked attendance for {worker.get_full_name() or worker.username} — {slot_key} — {'Present' if is_present else 'Absent'}", 'attendance')
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'invalid request'}, status=400)
 
 @role_required('admin')
 def admin_sites(request):
-    return render(request, 'admin_sites.html', {'sites': Site.objects.all()})
+    sites = Site.objects.all().order_by('-created_at')
+    for site in sites:
+        tasks = Task.objects.filter(site=site)
+        total_tasks = tasks.count()
+        done_tasks = tasks.filter(status='Done').count()
+        inprogress_tasks = tasks.filter(status='In Progress').count()
+        pending_tasks = tasks.filter(status='Pending').count()
+        pct = round((done_tasks / total_tasks * 100)) if total_tasks > 0 else 0
+        site.total_tasks = total_tasks
+        site.done_tasks = done_tasks
+        site.inprogress_tasks = inprogress_tasks
+        site.pending_tasks = pending_tasks
+        site.task_pct = pct
+    return render(request, 'admin_sites.html', {'sites': sites})
 
 @role_required('admin')
 def admin_tasks(request):
@@ -611,6 +637,7 @@ def edit_site(request, site_id):
             site.owner_name = form.cleaned_data.get('owner_name_field', site.owner_name)
             site.owner_phone = form.cleaned_data.get('owner_phone_field', site.owner_phone)
             site.save()
+            log_activity(request.user, f"Edited site: {site.name}", 'site')
             # Update linked customer user
             if customer:
                 new_username = form.cleaned_data.get('new_username', '').strip()
@@ -639,7 +666,9 @@ def edit_site(request, site_id):
             initial['owner_phone_field'] = customer.phone or site.owner_phone
         form = SiteEditForm(instance=site, initial=initial)
     return render(request, 'form_template.html', {
-        'form': form, 'title': f'Edit Site — {site.name}', 'back_url': 'admin_sites'
+        'form': form, 'title': f'Edit Site — {site.name}', 'back_url': 'admin_sites',
+        'delete_url': f'/mgmt/sites/{site.id}/delete/',
+        'delete_label': 'Delete Site',
     })
 
 
@@ -649,6 +678,7 @@ def delete_site(request, site_id):
     if request.method == 'POST':
         name = site.name
         site.delete()
+        log_activity(request.user, f"Deleted site: {name}", 'site')
         messages.success(request, f'Site "{name}" deleted.')
         return redirect('admin_sites')
     return render(request, 'confirm_delete.html', {
@@ -780,6 +810,7 @@ def add_product(request):
             product = form.save(commit=False)
             product.added_by = request.user
             product.save()
+            log_activity(request.user, f"Added product: {product.name} (qty: {product.quantity})", 'product')
             return redirect('products_list')
     else:
         form = ProductForm()
@@ -813,6 +844,7 @@ def update_product_qty(request, product_id):
         elif action == 'remove':
             product.quantity = max(0, product.quantity - qty)
         product.save()
+        log_activity(request.user, f"{'Added' if action == 'add' else 'Removed'} {qty} units of {product.name}", 'product')
     return redirect('products_list')
 
 @login_required
@@ -874,6 +906,7 @@ def take_tool(request, tool_id):
         tool.taken_by = request.user
         tool.taken_at = timezone.now()
         tool.save()
+        log_activity(request.user, f"Took tool: {tool.name}", 'tool')
     return redirect('tools_list')
 
 @login_required
@@ -885,6 +918,7 @@ def return_tool(request, tool_id):
             tool.taken_by = None
             tool.taken_at = None
             tool.save()
+            log_activity(request.user, f"Returned tool: {tool.name}", 'tool')
     return redirect('tools_list')
 
 @login_required
@@ -933,6 +967,7 @@ def assign_task_for_site(request):
         )
         if worker_ids:
             task.assigned_workers.set(worker_ids)
+        log_activity(request.user, f"Assigned task '{task.title}' to site: {site.name}", 'task')
         messages.success(request, f'Task "{title}" assigned successfully.')
     return redirect('admin_sites')
 
@@ -1015,6 +1050,7 @@ def update_task_status(request, task_id):
             task.status = new_status
             task.is_completed = (new_status == 'Done')
             task.save()
+            log_activity(request.user, f"Updated task '{task.title}' status to {new_status}", 'task')
     return redirect('worker_my_tasks')
 
 
@@ -1037,3 +1073,33 @@ def customer_tasks(request):
         tasks = []
     return render(request, 'customer_tasks.html', {'tasks': tasks, 'site': site})
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Activity History / Audit Log
+# ═══════════════════════════════════════════════════════════════════════════════
+
+ACTIVITY_CATEGORIES = [
+    ('', 'All'),
+    ('attendance', '🕐 Attendance'),
+    ('task', '📋 Task'),
+    ('site', '🏗️ Site'),
+    ('worker', '👷 Worker'),
+    ('bill', '🧾 Bill'),
+    ('update', '📸 Updates'),
+    ('tool', '🔧 Tool'),
+    ('product', '📦 Product'),
+]
+
+@login_required
+def activity_history(request):
+    if request.user.role != 'admin':
+        return redirect('login')
+    category = request.GET.get('category', '')
+    logs = ActivityLog.objects.all().select_related('user').order_by('-timestamp')
+    if category:
+        logs = logs.filter(category=category)
+    return render(request, 'history.html', {
+        'logs': logs,
+        'category': category,
+        'categories': ACTIVITY_CATEGORIES,
+    })

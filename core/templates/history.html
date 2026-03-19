@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Activity History — E-Tech Builders{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+  <div>
+    <h2 style="font-size:20px;font-weight:700;color:#1A1A2E;margin-bottom:4px;">📜 Activity History</h2>
+    <p style="font-size:13px;color:#5A6A85;">Full audit log of all actions across the app.</p>
+  </div>
+  <div style="font-size:12px;color:#5A6A85;background:#F0F7FF;padding:6px 14px;border-radius:20px;border:1px solid #DDEEFF;">
+    {{ logs.count }} event{{ logs.count|pluralize }}
+  </div>
+</div>
+
+<!-- Filter tabs -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+  {% for cat, label in categories %}
+  <a href="?category={{ cat }}"
+    style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;text-decoration:none;
+    {% if category == cat %}background:#1A73E8;color:#fff;{% else %}background:#EBF4FF;color:#1565C0;{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Log list -->
+<div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;">
+  {% for log in logs %}
+  <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid #F0F7FF;transition:background 0.15s;"
+    onmouseenter="this.style.background='#FAFCFF'" onmouseleave="this.style.background='#fff'">
+
+    <!-- Avatar -->
+    <div style="width:40px;height:40px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#1A73E8;flex-shrink:0;border:2px solid #DDEEFF;">
+      {% if log.user %}{{ log.user.get_full_name|default:log.user.username|first|upper }}{% else %}?{% endif %}
+    </div>
+
+    <!-- Category icon -->
+    <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+      {% if log.category == 'attendance' %}background:#E8F5E9;
+      {% elif log.category == 'task' %}background:#EBF4FF;
+      {% elif log.category == 'site' %}background:#FFF8E1;
+      {% elif log.category == 'worker' %}background:#F3E5F5;
+      {% elif log.category == 'bill' %}background:#FFEBEE;
+      {% elif log.category == 'update' %}background:#E3F2FD;
+      {% elif log.category == 'tool' %}background:#FFF3E0;
+      {% elif log.category == 'product' %}background:#E8F5E9;
+      {% else %}background:#F5F5F5;{% endif %}">
+      {% if log.category == 'attendance' %}🕐
+      {% elif log.category == 'task' %}📋
+      {% elif log.category == 'site' %}🏗️
+      {% elif log.category == 'worker' %}👷
+      {% elif log.category == 'bill' %}🧾
+      {% elif log.category == 'update' %}📸
+      {% elif log.category == 'tool' %}🔧
+      {% elif log.category == 'product' %}📦
+      {% else %}🔐{% endif %}
+    </div>
+
+    <!-- Content -->
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:600;color:#1A1A2E;">
+          {% if log.user %}{{ log.user.get_full_name|default:log.user.username }}{% else %}Deleted User{% endif %}
+        </span>
+        {% if log.user %}
+        <span style="font-size:10px;background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:20px;text-transform:capitalize;">{{ log.user.role }}</span>
+        {% endif %}
+        <span style="font-size:10px;background:
+          {% if log.category == 'attendance' %}#E8F5E9;color:#2E7D32;
+          {% elif log.category == 'task' %}#EBF4FF;color:#1565C0;
+          {% elif log.category == 'site' %}#FFF8E1;color:#F57C00;
+          {% elif log.category == 'worker' %}#F3E5F5;color:#7B1FA2;
+          {% elif log.category == 'bill' %}#FFEBEE;color:#C62828;
+          {% elif log.category == 'update' %}#E3F2FD;color:#1565C0;
+          {% elif log.category == 'tool' %}#FFF3E0;color:#E65100;
+          {% elif log.category == 'product' %}#E8F5E9;color:#2E7D32;
+          {% else %}#F5F5F5;color:#757575;{% endif %}
+          padding:2px 8px;border-radius:20px;text-transform:capitalize;">
+          {{ log.get_category_display }}
+        </span>
+      </div>
+      <div style="font-size:13px;color:#5A6A85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ log.action }}</div>
+    </div>
+
+    <!-- Timestamp -->
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:11px;color:#5A6A85;font-weight:500;">{{ log.timestamp|date:"M d, Y" }}</div>
+      <div style="font-size:11px;color:#B4B2A9;">{{ log.timestamp|time:"g:i A" }}</div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:60px;">
+    <div style="font-size:40px;margin-bottom:12px;">📭</div>
+    <div style="font-size:15px;font-weight:600;color:#1A1A2E;">No activity yet</div>
+    <div style="font-size:13px;color:#5A6A85;margin-top:4px;">Actions taken in the app will appear here.</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

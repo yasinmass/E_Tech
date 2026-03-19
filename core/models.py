@@ -138,3 +138,26 @@ class Tool(models.Model):
     def __str__(self):
         return self.name
 
+
+class ActivityLog(models.Model):
+    CATEGORY_CHOICES = [
+        ('attendance', 'Attendance'),
+        ('task', 'Task'),
+        ('site', 'Site'),
+        ('worker', 'Worker'),
+        ('bill', 'Bill'),
+        ('update', 'Work Update'),
+        ('tool', 'Tool'),
+        ('product', 'Product'),
+        ('auth', 'Auth'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=500)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"[{self.category}] {self.action}"
