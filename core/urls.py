@@ -72,4 +72,12 @@ urlpatterns = [
     path('products/<int:product_id>/qty/', views.update_product_qty, name='update_product_qty'),
     path('products/<int:product_id>/delete/', views.delete_product, name='delete_product'),
     path('products/<int:product_id>/edit/', views.edit_product, name='edit_product'),
+
+    # ── Tools / Equipment ─────────────────────────────────────────────────────
+    path('tools/', views.tools_list, name='tools_list'),
+    path('tools/add/', views.add_tool, name='add_tool'),
+    path('tools/<int:tool_id>/take/', views.take_tool, name='take_tool'),
+    path('tools/<int:tool_id>/return/', views.return_tool, name='return_tool'),
+    path('tools/<int:tool_id>/delete/', views.delete_tool, name='delete_tool'),
+    path('tools/<int:tool_id>/edit/', views.edit_tool, name='edit_tool'),
 ]

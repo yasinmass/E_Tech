@@ -873,9 +873,7 @@
             <a href="{% url 'admin_sites' %}" class="menu-item {% if '/sites/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">🏗️</span>Sites
             </a>
-            <a href="{% url 'admin_tasks' %}" class="menu-item {% if '/tasks/' in request.path %}active{% endif %}">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">📋</span>Tasks
-            </a>
+
             <a href="{% url 'admin_all_attendance' %}"
                 class="menu-item {% if '/attendance/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">🕐</span>Attendance
@@ -889,11 +887,10 @@
             <a href="{% url 'products_list' %}" class="menu-item {% if '/products/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">📦</span>Products
             </a>
-            <div class="divider" style="margin:8px 0;"></div>
-            <a href="{% url 'profile_settings' %}"
-                class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">👤</span>Profile
+            <a href="{% url 'tools_list' %}" class="menu-item {% if '/tools/' in request.path %}active{% endif %}">
+                <span class="menu-icon"></span> <span style="margin-right:6px;">🔧</span>Tools
             </a>
+
 
             {% elif user.role == 'worker' %}
             <div class="menu-section-label">Worker Menu</div>
@@ -924,11 +921,10 @@
             <a href="{% url 'products_list' %}" class="menu-item {% if '/products/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">📦</span>Products
             </a>
-            <div class="divider" style="margin:8px 0;"></div>
-            <a href="{% url 'profile_settings' %}"
-                class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">👤</span>Profile
+            <a href="{% url 'tools_list' %}" class="menu-item {% if '/tools/' in request.path %}active{% endif %}">
+                <span class="menu-icon"></span> <span style="margin-right:6px;">🔧</span>Tools
             </a>
+
 
             {% elif user.role == 'customer' %}
             <div class="menu-section-label">Customer Portal</div>
@@ -943,19 +939,11 @@
                 class="menu-item {% if '/updates/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">📸</span>Work Updates
             </a>
-            <div class="divider" style="margin:8px 0;"></div>
-            <a href="{% url 'profile_settings' %}"
-                class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">👤</span>Profile
-            </a>
+
             {% endif %}
         </nav>
 
-        <div class="sidebar-footer">
-            <a href="{% url 'logout' %}" class="menu-item-logout">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">🚪</span>Logout
-            </a>
-        </div>
+
     </aside>
     {% endif %}
 
@@ -972,9 +960,50 @@
 
             <div class="nav-right">
                 {% if user.is_authenticated %}
-                <div class="nav-user">
-                    <span class="role-badge">{{ user.role }}</span>
-                    <span style="color: var(--text-primary); font-weight:600;">{{ user.get_full_name|default:user.username }}</span>
+                <div style="display:flex;align-items:center;gap:12px;position:relative;">
+
+                  <!-- Role badge -->
+                  <span style="background:#E3F2FD;color:#1565C0;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;text-transform:uppercase;">
+                    {{ user.role }}
+                  </span>
+
+                  <!-- Profile avatar button -->
+                  <div onclick="toggleProfileMenu()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 12px;border-radius:10px;border:1px solid #DDEEFF;background:#fff;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#1A73E8;">
+                      {{ user.get_full_name|default:user.username|first|upper }}
+                    </div>
+                    <span style="font-size:13px;font-weight:500;color:#1A1A2E;">
+                      {{ user.get_full_name|default:user.username }}
+                    </span>
+                    <span style="font-size:10px;color:#5A6A85;">▼</span>
+                  </div>
+
+                  <!-- Dropdown menu -->
+                  <div id="profileMenu" style="display:none;position:absolute;top:48px;right:0;background:#fff;border:1px solid #DDEEFF;border-radius:12px;width:200px;z-index:999;overflow:hidden;box-shadow:0 4px 16px rgba(26,115,232,0.12);">
+
+                    <!-- User info header -->
+                    <div style="padding:14px 16px;border-bottom:1px solid #EBF4FF;background:#F0F7FF;">
+                      <div style="font-size:13px;font-weight:600;color:#1A1A2E;">
+                        {{ user.get_full_name|default:user.username }}
+                      </div>
+                      <div style="font-size:11px;color:#5A6A85;margin-top:2px;text-transform:capitalize;">
+                        {{ user.role }}
+                      </div>
+                    </div>
+
+                    <!-- Profile link -->
+                    <a href="{% url 'profile_settings' %}"
+                      style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;color:#1A1A2E;text-decoration:none;border-bottom:1px solid #F0F7FF;">
+                      <span style="font-size:16px;">👤</span> Profile Settings
+                    </a>
+
+                    <!-- Logout link -->
+                    <a href="{% url 'logout' %}"
+                      style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;color:#C62828;text-decoration:none;">
+                      <span style="font-size:16px;">🚪</span> Logout
+                    </a>
+
+                  </div>
                 </div>
                 {% else %}
                 <a href="{% url 'login' %}" class="btn btn-sm">Sign In</a>
@@ -1008,6 +1037,17 @@
     </div>
 
     <script>
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profileMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('profileMenu');
+            if (!e.target.closest('[onclick="toggleProfileMenu()"]') && menu) {
+                menu.style.display = 'none';
+            }
+        });
+
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('sidebarOverlay').classList.toggle('active');

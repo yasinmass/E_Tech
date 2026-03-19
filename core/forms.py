@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product
+from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product, Tool
 
 # ── Existing: Worker creation ─────────────────────────────────────────────────
 class AddWorkerForm(forms.ModelForm):
@@ -204,4 +204,15 @@ class ProductForm(forms.ModelForm):
             'size': 'Size (e.g. 2 inch x 10ft)',
             'place': 'Storage Place / Location',
             'photo': 'Product Photo',
+        }
+
+class ToolForm(forms.ModelForm):
+    class Meta:
+        model = Tool
+        fields = ['name', 'location', 'description', 'photo']
+        labels = {
+            'name': 'Tool Name',
+            'location': 'Storage Location',
+            'description': 'Description (optional)',
+            'photo': 'Tool Photo',
         }

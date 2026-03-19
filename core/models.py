@@ -108,3 +108,26 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+class Tool(models.Model):
+    name = models.CharField(max_length=200)
+    location = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    photo = models.ImageField(upload_to='tools/', blank=True, null=True)
+    is_available = models.BooleanField(default=True)
+    taken_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='taken_tools'
+    )
+    taken_at = models.DateTimeField(null=True, blank=True)
+    added_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='added_tools'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+

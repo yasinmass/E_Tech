@@ -5,11 +5,11 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 import json
 from datetime import date
-from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product
+from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product, Tool
 from .forms import (
     AddWorkerForm, CustomerCreationForm, WorkerEditForm,
     SiteForm, SiteEditForm, TaskForm, AttendanceForm, WorkUpdateForm, BillForm,
-    ProfileSettingsForm, ProductForm,
+    ProfileSettingsForm, ProductForm, ToolForm,
 )
 
 # ---------- Role helpers ----------
@@ -386,7 +386,8 @@ def worker_my_tasks(request):
 
 @role_required('worker')
 def worker_my_sites(request):
-    return render(request, 'worker_sites.html', {'sites': request.user.assigned_sites.all()})
+    sites = Site.objects.all().order_by('-created_at')
+    return render(request, 'worker_sites.html', {'sites': sites})
 
 @role_required('worker')
 def worker_my_attendance(request):
@@ -822,3 +823,89 @@ def delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     product.delete()
     return redirect('products_list')
+
+# ---------- Tool Views ----------
+@login_required
+def tools_list(request):
+    from django.db.models import Q
+    query = request.GET.get('q', '')
+    status = request.GET.get('status', '')
+    tools = Tool.objects.all().order_by('is_available', '-created_at')
+    if query:
+        tools = Tool.objects.filter(
+            Q(name__icontains=query) | Q(location__icontains=query)
+        ).order_by('is_available', '-created_at')
+    if status == 'available':
+        tools = tools.filter(is_available=True)
+    elif status == 'inuse':
+        tools = tools.filter(is_available=False)
+    total = Tool.objects.count()
+    available = Tool.objects.filter(is_available=True).count()
+    in_use = Tool.objects.filter(is_available=False).count()
+    return render(request, 'tools.html', {
+        'tools': tools,
+        'query': query,
+        'status': status,
+        'total': total,
+        'available': available,
+        'in_use': in_use,
+    })
+
+@login_required
+def add_tool(request):
+    if request.user.role != 'admin':
+        return redirect('tools_list')
+    if request.method == 'POST':
+        form = ToolForm(request.POST, request.FILES)
+        if form.is_valid():
+            tool = form.save(commit=False)
+            tool.added_by = request.user
+            tool.save()
+            return redirect('tools_list')
+    else:
+        form = ToolForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Add Tool', 'back_url': 'tools_list'})
+
+@login_required
+def take_tool(request, tool_id):
+    from django.utils import timezone
+    tool = get_object_or_404(Tool, id=tool_id)
+    if request.method == 'POST' and tool.is_available:
+        tool.is_available = False
+        tool.taken_by = request.user
+        tool.taken_at = timezone.now()
+        tool.save()
+    return redirect('tools_list')
+
+@login_required
+def return_tool(request, tool_id):
+    tool = get_object_or_404(Tool, id=tool_id)
+    if request.method == 'POST':
+        if request.user == tool.taken_by or request.user.role == 'admin':
+            tool.is_available = True
+            tool.taken_by = None
+            tool.taken_at = None
+            tool.save()
+    return redirect('tools_list')
+
+@login_required
+def delete_tool(request, tool_id):
+    if request.user.role != 'admin':
+        return redirect('tools_list')
+    tool = get_object_or_404(Tool, id=tool_id)
+    tool.delete()
+    return redirect('tools_list')
+
+@login_required
+def edit_tool(request, tool_id):
+    if request.user.role != 'admin':
+        return redirect('tools_list')
+    tool = get_object_or_404(Tool, id=tool_id)
+    if request.method == 'POST':
+        form = ToolForm(request.POST, request.FILES, instance=tool)
+        if form.is_valid():
+            form.save()
+            return redirect('tools_list')
+    else:
+        form = ToolForm(instance=tool)
+    return render(request, 'form_template.html', {'form': form, 'title': 'Edit Tool', 'back_url': 'tools_list'})
