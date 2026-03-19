@@ -2,107 +2,133 @@
 {% block title %}Worker Dashboard - E-Tech Builders{% endblock %}
 {% block content %}
 
-<div class="page-header">
+<div class="page-header" style="background:var(--bg-white); border-radius:12px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,0.06); border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
   <div>
-    <h2>My Dashboard 👷</h2>
-    <p class="page-subtitle">{{ today|date:"l, F j, Y" }}</p>
+    <h2 style="margin:0 0 6px; font-size:22px;">Good Morning, {{ request.user.first_name|default:request.user.username }}!</h2>
+    <p class="page-subtitle" style="margin:0; font-size:14px; color:var(--text-secondary);">
+      E-Tech Builders — Construction Management
+    </p>
   </div>
-  <div style="display:flex; gap:8px; flex-wrap:wrap;">
-    <a href="{% url 'worker_upload_update' %}" class="btn">📸 Upload Update</a>
-    <a href="{% url 'worker_upload_bill' %}" class="btn btn-warning">🧾 Upload Bill</a>
+  <div style="font-size:14px; font-weight:600; color:var(--primary-color); padding:8px 16px; background:#EBF4FF; border-radius:8px; border:1px solid #DDEEFF;">
+    {{ today|date:"l, F j, Y" }}
   </div>
 </div>
 
 <!-- Attendance Summary Stats -->
-<div class="grid-stats" style="margin-bottom:20px;">
-  <div class="stat-card">
-    <span class="stat-icon">✅</span>
+<div class="grid-stats" style="margin-bottom:24px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+  <div class="stat-card" style="border-top:4px solid #2E7D32;">
     <div class="stat-number" style="color:#2E7D32;">{{ present_days }}</div>
     <div class="stat-label">Present Days</div>
   </div>
-  <div class="stat-card">
-    <span class="stat-icon">❌</span>
+  <div class="stat-card" style="border-top:4px solid #E53935;">
     <div class="stat-number" style="color:#E53935;">{{ absent_days }}</div>
     <div class="stat-label">Absent Days</div>
   </div>
-  <div class="stat-card">
-    <span class="stat-icon">📊</span>
-    <div class="stat-number">{{ attendance_percentage }}%</div>
+  <div class="stat-card" style="border-top:4px solid #1A73E8;">
+    <div class="stat-number" style="color:#1A73E8;">{{ attendance_percentage }}%</div>
     <div class="stat-label">Attendance Rate</div>
+  </div>
+  <div class="stat-card" style="border-top:4px solid #F57C00;">
+    <div class="stat-number" style="color:#F57C00;">{{ pending_tasks }}</div>
+    <div class="stat-label">Pending Tasks</div>
   </div>
 </div>
 
-<!-- Today's Attendance Slots -->
-<div class="card">
-  <div class="section-header">
-    <span class="section-title">⏱️ Mark Today's Slots</span>
-    <span style="font-size:13px; color:var(--text-secondary);">{{ today|date:"M d, Y" }}</span>
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+  <!-- Today's Attendance Status -->
+  <div class="card">
+    <div class="section-header">
+      <span class="section-title">⏱️ Today's Attendance Status</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      
+      <!-- Early Morning -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--card-border); border-radius:8px;">
+        <div>
+          <div style="font-weight:600; color:#F57C00;">🌅 Early Morning</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">5 AM – 8 AM (Extra Duty)</div>
+        </div>
+        <div>
+          {% if 'early' in marked_slots %}
+            {% if marked_slots.early %}
+              <span class="badge badge-present">✓ Present</span>
+            {% else %}
+              <span class="badge badge-absent">✗ Absent</span>
+            {% endif %}
+          {% else %}
+            <span class="badge" style="background:#f1f3f5; color:#5A6A85; font-weight:600; padding:4px 10px; border-radius:20px; font-size:12px;">— Not Marked</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Morning -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--card-border); border-radius:8px;">
+        <div>
+          <div style="font-weight:600;">☀️ Morning</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">9 AM – 1 PM</div>
+        </div>
+        <div>
+          {% if 'morning' in marked_slots %}
+            {% if marked_slots.morning %}
+              <span class="badge badge-present">✓ Present</span>
+            {% else %}
+              <span class="badge badge-absent">✗ Absent</span>
+            {% endif %}
+          {% else %}
+            <span class="badge" style="background:#f1f3f5; color:#5A6A85; font-weight:600; padding:4px 10px; border-radius:20px; font-size:12px;">— Not Marked</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Afternoon -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--card-border); border-radius:8px;">
+        <div>
+          <div style="font-weight:600;">🌤️ Afternoon</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">1 PM – 6 PM</div>
+        </div>
+        <div>
+          {% if 'afternoon' in marked_slots %}
+            {% if marked_slots.afternoon %}
+              <span class="badge badge-present">✓ Present</span>
+            {% else %}
+              <span class="badge badge-absent">✗ Absent</span>
+            {% endif %}
+          {% else %}
+            <span class="badge" style="background:#f1f3f5; color:#5A6A85; font-weight:600; padding:4px 10px; border-radius:20px; font-size:12px;">— Not Marked</span>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Early Morning -->
-  <div class="slot-card">
-    <div>
-      <div style="font-weight:600; color:#F57C00;">🌅 Early Morning</div>
-      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">5 AM – 8 AM (Extra Duty)</div>
+  <!-- Recent Tasks -->
+  <div class="card">
+    <div class="section-header">
+      <span class="section-title">📋 Recent Tasks</span>
+      <a href="{% url 'worker_my_tasks' %}" class="btn btn-sm btn-secondary">View All</a>
     </div>
-    <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px; align-items:center;">
-      {% csrf_token %}
-      <input type="hidden" name="slot" value="early">
-      {% if 'early' in marked_slots %}
-        {% if marked_slots.early %}
-          <span class="badge badge-present">✅ Present (Logged)</span>
-        {% else %}
-          <span class="badge badge-absent">❌ Absent (Logged)</span>
-        {% endif %}
-      {% else %}
-        <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">✔ Present</button>
-        <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">✘ Absent</button>
-      {% endif %}
-    </form>
-  </div>
-
-  <!-- Morning -->
-  <div class="slot-card">
-    <div>
-      <div style="font-weight:600;">☀️ Morning</div>
-      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">9 AM – 1 PM</div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      {% for task in tasks|slice:":4" %}
+      <div style="padding:12px; border:1px solid var(--card-border); border-radius:8px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:14px; margin-bottom:4px; color:var(--text-primary);">{{ task.title }}</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Due: {{ task.created_at|date:"M d, Y"|default:"—" }}</div>
+        </div>
+        <div style="flex-shrink:0;">
+          {% if task.is_completed %}
+            <span class="badge badge-done">✔ Done</span>
+          {% else %}
+            <span class="badge badge-pending">⏳ Pending</span>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div style="padding:20px; text-align:center; color:var(--text-secondary); background:var(--bg-main); border-radius:8px; font-size:13px; font-weight:500;">
+        No tasks assigned yet.
+      </div>
+      {% endfor %}
     </div>
-    <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px; align-items:center;">
-      {% csrf_token %}
-      <input type="hidden" name="slot" value="morning">
-      {% if 'morning' in marked_slots %}
-        {% if marked_slots.morning %}
-          <span class="badge badge-present">✅ Present (Logged)</span>
-        {% else %}
-          <span class="badge badge-absent">❌ Absent (Logged)</span>
-        {% endif %}
-      {% else %}
-        <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">✔ Present</button>
-        <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">✘ Absent</button>
-      {% endif %}
-    </form>
-  </div>
-
-  <!-- Afternoon -->
-  <div class="slot-card">
-    <div>
-      <div style="font-weight:600;">🌤️ Afternoon</div>
-      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">1 PM – 6 PM</div>
-    </div>
-    <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px; align-items:center;">
-      {% csrf_token %}
-      <input type="hidden" name="slot" value="afternoon">
-      {% if 'afternoon' in marked_slots %}
-        {% if marked_slots.afternoon %}
-          <span class="badge badge-present">✅ Present (Logged)</span>
-        {% else %}
-          <span class="badge badge-absent">❌ Absent (Logged)</span>
-        {% endif %}
-      {% else %}
-        <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">✔ Present</button>
-        <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">✘ Absent</button>
-      {% endif %}
-    </form>
   </div>
 </div>
 

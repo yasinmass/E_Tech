@@ -219,6 +219,7 @@ def worker_dashboard(request):
         attendance_percentage = int((present_days / (present_days + absent_days)) * 100) if (present_days + absent_days) > 0 else 0
 
     tasks = Task.objects.filter(worker=request.user).select_related('site').order_by('-created_at')
+    pending_tasks = tasks.filter(is_completed=False).count()
     sites = request.user.assigned_sites.all()
     updates = WorkUpdate.objects.filter(worker=request.user).order_by('-created_at')[:10]
     history = all_atts.order_by('-date')[:30]
@@ -229,6 +230,7 @@ def worker_dashboard(request):
         'absent_days': absent_days,
         'attendance_percentage': attendance_percentage,
         'tasks': tasks,
+        'pending_tasks': pending_tasks,
         'sites': sites,
         'updates': updates,
         'history': history,
