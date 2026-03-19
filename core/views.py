@@ -43,6 +43,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            log_activity(user, f"Logged in to the app", 'auth')
             return _redirect_by_role(user)
         else:
             return render(request, 'login.html', {'error': 'Invalid username or password.'})
@@ -58,6 +59,8 @@ def _redirect_by_role(user):
     return redirect('login')
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        log_activity(request.user, f"Logged out of the app", 'auth')
     logout(request)
     return redirect('login')
 
@@ -228,7 +231,7 @@ def worker_dashboard(request):
     if unique_dates > 0:
         attendance_percentage = int((present_days / (present_days + absent_days)) * 100) if (present_days + absent_days) > 0 else 0
 
-    tasks = Task.objects.filter(worker=request.user).select_related('site').order_by('-created_at')
+    tasks = Task.objects.filter(assigned_workers=request.user).select_related('site').order_by('-created_at')
     pending_tasks = tasks.filter(is_completed=False).count()
     sites = request.user.assigned_sites.all()
     updates = WorkUpdate.objects.filter(worker=request.user).order_by('-created_at')[:10]
@@ -1088,6 +1091,7 @@ ACTIVITY_CATEGORIES = [
     ('update', '📸 Updates'),
     ('tool', '🔧 Tool'),
     ('product', '📦 Product'),
+    ('auth', '🔐 Login / Logout'),
 ]
 
 @login_required
@@ -1098,8 +1102,23 @@ def activity_history(request):
     logs = ActivityLog.objects.all().select_related('user').order_by('-timestamp')
     if category:
         logs = logs.filter(category=category)
+        
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    online_threshold = timezone.now() - timedelta(minutes=10)
+    online_users = User.objects.filter(last_seen__gte=online_threshold).exclude(role='admin')
+    
+    recent_threshold = timezone.now() - timedelta(hours=1)
+    recent_users = User.objects.filter(
+        last_seen__gte=recent_threshold,
+        last_seen__lt=online_threshold
+    ).exclude(role='admin')
+    
     return render(request, 'history.html', {
         'logs': logs,
         'category': category,
         'categories': ACTIVITY_CATEGORIES,
+        'online_users': online_users,
+        'recent_users': recent_users,
     })

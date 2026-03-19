@@ -9,6 +9,7 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='admin')
     phone = models.CharField(max_length=15, blank=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
 
 class Site(models.Model):
     STATUS_CHOICES = [
