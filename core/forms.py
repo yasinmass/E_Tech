@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile
+from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product
 
 # ── Existing: Worker creation ─────────────────────────────────────────────────
 class AddWorkerForm(forms.ModelForm):
@@ -193,3 +193,15 @@ class ProfileSettingsForm(forms.Form):
             if new_pw != confirm_pw:
                 raise forms.ValidationError('New passwords do not match.')
         return cleaned
+
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['name', 'quantity', 'size', 'place', 'photo']
+        labels = {
+            'name': 'Product Name',
+            'quantity': 'Quantity',
+            'size': 'Size (e.g. 2 inch x 10ft)',
+            'place': 'Storage Place / Location',
+            'photo': 'Product Photo',
+        }

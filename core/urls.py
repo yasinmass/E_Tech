@@ -65,4 +65,11 @@ urlpatterns = [
 
     # ── Profile Settings — all roles (Feature 5) ──────────────────────────────
     path('profile/', views.profile_settings, name='profile_settings'),
+
+    # ── Products / Inventory ───────────────────────────────────────────────────
+    path('products/', views.products_list, name='products_list'),
+    path('products/add/', views.add_product, name='add_product'),
+    path('products/<int:product_id>/qty/', views.update_product_qty, name='update_product_qty'),
+    path('products/<int:product_id>/delete/', views.delete_product, name='delete_product'),
+    path('products/<int:product_id>/edit/', views.edit_product, name='edit_product'),
 ]

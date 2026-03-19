@@ -886,6 +886,9 @@
             <a href="{% url 'admin_all_bills' %}" class="menu-item {% if '/bills/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">🧾</span>Bills
             </a>
+            <a href="{% url 'products_list' %}" class="menu-item {% if '/products/' in request.path %}active{% endif %}">
+                <span class="menu-icon"></span> <span style="margin-right:6px;">📦</span>Products
+            </a>
             <div class="divider" style="margin:8px 0;"></div>
             <a href="{% url 'profile_settings' %}"
                 class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
@@ -917,6 +920,9 @@
             <a href="{% url 'worker_my_bills' %}"
                 class="menu-item {% if '/my-bills/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">🧾</span>Bills
+            </a>
+            <a href="{% url 'products_list' %}" class="menu-item {% if '/products/' in request.path %}active{% endif %}">
+                <span class="menu-icon"></span> <span style="margin-right:6px;">📦</span>Products
             </a>
             <div class="divider" style="margin:8px 0;"></div>
             <a href="{% url 'profile_settings' %}"

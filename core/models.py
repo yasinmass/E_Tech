@@ -92,3 +92,19 @@ class WorkerProfile(models.Model):
     address = models.TextField(blank=True)
     id_proof = models.ImageField(upload_to='workers/id_proofs/', blank=True, null=True, verbose_name='ID Proof Photo')
     photo = models.ImageField(upload_to='workers/photos/', blank=True, null=True, verbose_name='Worker Photo')
+
+class Product(models.Model):
+    name = models.CharField(max_length=200)
+    quantity = models.PositiveIntegerField(default=0)
+    size = models.CharField(max_length=100, blank=True)
+    place = models.CharField(max_length=200, blank=True)
+    photo = models.ImageField(upload_to='products/', blank=True, null=True)
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def is_low_stock(self):
+        return self.quantity <= 5
+
+    def __str__(self):
+        return self.name

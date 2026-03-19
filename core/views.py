@@ -5,11 +5,11 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 import json
 from datetime import date
-from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile
+from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product
 from .forms import (
     AddWorkerForm, CustomerCreationForm, WorkerEditForm,
     SiteForm, SiteEditForm, TaskForm, AttendanceForm, WorkUpdateForm, BillForm,
-    ProfileSettingsForm,
+    ProfileSettingsForm, ProductForm,
 )
 
 # ---------- Role helpers ----------
@@ -752,3 +752,73 @@ def profile_settings(request):
             'phone':      request.user.phone,
         })
     return render(request, 'profile_settings.html', {'form': form})
+
+# ---------- Product / Inventory Views ----------
+@login_required
+def products_list(request):
+    query = request.GET.get('q', '')
+    products = Product.objects.all().order_by('-created_at')
+    if query:
+        products = products.filter(name__icontains=query) | Product.objects.filter(place__icontains=query).order_by('-created_at')
+        products = products.distinct()
+    total = products.count()
+    in_stock = products.filter(quantity__gt=5).count()
+    low_stock = products.filter(quantity__lte=5).count()
+    return render(request, 'products.html', {
+        'products': products,
+        'query': query,
+        'total': total,
+        'in_stock': in_stock,
+        'low_stock': low_stock,
+    })
+
+@login_required
+def add_product(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.added_by = request.user
+            product.save()
+            return redirect('products_list')
+    else:
+        form = ProductForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Add Product', 'back_url': 'products_list'})
+
+@login_required
+def edit_product(request, product_id):
+    if request.user.role != 'admin':
+        return redirect('products_list')
+    product = get_object_or_404(Product, id=product_id)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect('products_list')
+    else:
+        form = ProductForm(instance=product)
+    return render(request, 'form_template.html', {'form': form, 'title': 'Edit Product', 'back_url': 'products_list'})
+
+@login_required
+def update_product_qty(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        try:
+            qty = int(request.POST.get('qty', 1))
+        except ValueError:
+            qty = 1
+        if action == 'add':
+            product.quantity += qty
+        elif action == 'remove':
+            product.quantity = max(0, product.quantity - qty)
+        product.save()
+    return redirect('products_list')
+
+@login_required
+def delete_product(request, product_id):
+    if request.user.role != 'admin':
+        return redirect('products_list')
+    product = get_object_or_404(Product, id=product_id)
+    product.delete()
+    return redirect('products_list')
