@@ -858,89 +858,89 @@
             <div class="menu-section-label">Admin Panel</div>
             <a href="{% url 'admin_dashboard' %}"
                 class="menu-item {% if request.path == '/admin-dashboard/' %}active{% endif %}">
-                <span class="menu-icon">📊</span> Dashboard
+                <span class="menu-icon"></span> Dashboard
             </a>
             <a href="{% url 'admin_workers' %}" class="menu-item {% if '/workers/' in request.path %}active{% endif %}">
-                <span class="menu-icon">👷</span> Workers
+                <span class="menu-icon"></span> Workers
             </a>
             <a href="{% url 'admin_sites' %}" class="menu-item {% if '/sites/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🏗️</span> Sites
+                <span class="menu-icon"></span> Sites
             </a>
             <a href="{% url 'admin_tasks' %}" class="menu-item {% if '/tasks/' in request.path %}active{% endif %}">
-                <span class="menu-icon">📋</span> Tasks
+                <span class="menu-icon"></span> Tasks
             </a>
             <a href="{% url 'admin_all_attendance' %}"
                 class="menu-item {% if '/attendance/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🕒</span> Attendance
+                <span class="menu-icon"></span> Attendance
             </a>
             <a href="{% url 'admin_updates' %}" class="menu-item {% if '/updates/' in request.path %}active{% endif %}">
-                <span class="menu-icon">📸</span> Work Updates
+                <span class="menu-icon"></span> Work Updates
             </a>
             <a href="{% url 'admin_all_bills' %}" class="menu-item {% if '/bills/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🧾</span> Bills
+                <span class="menu-icon"></span> Bills
             </a>
             <div class="divider" style="margin:8px 0;"></div>
             <a href="{% url 'profile_settings' %}"
                 class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
-                <span class="menu-icon">👤</span> Profile
+                <span class="menu-icon"></span> Profile
             </a>
 
             {% elif user.role == 'worker' %}
             <div class="menu-section-label">Worker Menu</div>
             <a href="{% url 'worker_dashboard' %}"
                 class="menu-item {% if request.path == '/worker-dashboard/' %}active{% endif %}">
-                <span class="menu-icon">🏠</span> Dashboard
+                <span class="menu-icon"></span> Dashboard
             </a>
             <a href="{% url 'worker_my_tasks' %}"
                 class="menu-item {% if '/my-tasks/' in request.path %}active{% endif %}">
-                <span class="menu-icon">📋</span> My Tasks
+                <span class="menu-icon"></span> My Tasks
             </a>
             <a href="{% url 'worker_my_sites' %}"
                 class="menu-item {% if '/my-sites/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🏗️</span> My Sites
+                <span class="menu-icon"></span> My Sites
             </a>
             <a href="{% url 'worker_my_attendance' %}"
                 class="menu-item {% if '/my-attendance/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🕒</span> Attendance
+                <span class="menu-icon"></span> Attendance
             </a>
             <a href="{% url 'worker_my_updates' %}"
                 class="menu-item {% if '/my-updates/' in request.path %}active{% endif %}">
-                <span class="menu-icon">📸</span> Work Updates
+                <span class="menu-icon"></span> Work Updates
             </a>
             <a href="{% url 'worker_my_bills' %}"
                 class="menu-item {% if '/my-bills/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🧾</span> Upload Bills
+                <span class="menu-icon"></span> Upload Bills
             </a>
             <div class="divider" style="margin:8px 0;"></div>
             <a href="{% url 'profile_settings' %}"
                 class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
-                <span class="menu-icon">👤</span> Profile
+                <span class="menu-icon"></span> Profile
             </a>
 
             {% elif user.role == 'customer' %}
             <div class="menu-section-label">Customer Portal</div>
             <a href="{% url 'customer_dashboard' %}"
                 class="menu-item {% if request.path == '/customer-dashboard/' %}active{% endif %}">
-                <span class="menu-icon">📊</span> Overview
+                <span class="menu-icon"></span> Overview
             </a>
             <a href="{% url 'customer_sites' %}" class="menu-item {% if '/sites/' in request.path %}active{% endif %}">
-                <span class="menu-icon">🏗️</span> My Sites
+                <span class="menu-icon"></span> My Sites
             </a>
             <a href="{% url 'customer_updates' %}"
                 class="menu-item {% if '/updates/' in request.path %}active{% endif %}">
-                <span class="menu-icon">📸</span> Work Updates
+                <span class="menu-icon"></span> Work Updates
             </a>
             <div class="divider" style="margin:8px 0;"></div>
             <a href="{% url 'profile_settings' %}"
                 class="menu-item {% if request.path == '/profile/' %}active{% endif %}">
-                <span class="menu-icon">👤</span> Profile
+                <span class="menu-icon"></span> Profile
             </a>
             {% endif %}
         </nav>
 
         <div class="sidebar-footer">
             <a href="{% url 'logout' %}" class="menu-item-logout">
-                <span class="menu-icon">🚪</span> Logout
+                <span class="menu-icon"></span> Logout
             </a>
         </div>
     </aside>

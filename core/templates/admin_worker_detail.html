@@ -103,24 +103,7 @@
         {% endif %}
     </div>
 
-    <!-- Assigned Sites Option -->
-    <div class="card">
-      <h4 style="margin:0 0 16px; font-size:16px;">Assigned Sites</h4>
-      {% if worker.assigned_sites.all %}
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          {% for site in worker.assigned_sites.all %}
-          <div style="padding:12px 16px; border:1px solid var(--card-border); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-             <span><span class="badge badge-primary">🏗️</span> <strong>{{ site.name }}</strong></span>
-             <span style="font-size:12px; color:var(--text-secondary);">{{ site.status }}</span>
-          </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div style="padding:16px; background:var(--bg-main); border-radius:8px; text-align:center; color:var(--text-secondary); font-size:13px; font-weight:500;">
-          No sites currently assigned.
-        </div>
-      {% endif %}
-    </div>
+
   </div>
 </div>
 
