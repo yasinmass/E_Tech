@@ -34,10 +34,13 @@ urlpatterns = [
     # ── Admin: Edit & Delete — Sites (Feature 2) ──────────────────────────────
     path('mgmt/sites/<int:site_id>/edit/', views.edit_site, name='edit_site'),
     path('mgmt/sites/<int:site_id>/delete/', views.delete_site, name='delete_site'),
+    path('mgmt/sites/assign-task/', views.assign_task_for_site, name='assign_task_for_site'),
+    path('mgmt/api/search-workers/', views.search_workers_api, name='search_workers_api'),
 
     # ── Admin: Edit & Delete — Tasks (Feature 2) ──────────────────────────────
     path('mgmt/tasks/<int:task_id>/edit/', views.edit_task, name='edit_task'),
     path('mgmt/tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
+    path('mgmt/sites/<int:site_id>/tasks/', views.site_tasks, name='site_tasks'),
 
     # ── Admin: Edit & Delete — Bills (Feature 2) ──────────────────────────────
     path('mgmt/bills/<int:bill_id>/edit/', views.edit_bill, name='edit_bill'),
@@ -53,6 +56,7 @@ urlpatterns = [
 
     # ── Worker: Actions ───────────────────────────────────────────────────────
     path('worker/task-complete/<int:task_id>/', views.worker_mark_task_complete, name='worker_mark_task_complete'),
+    path('worker/task-status/<int:task_id>/', views.update_task_status, name='update_task_status'),
     path('worker/mark-attendance/', views.worker_mark_attendance, name='worker_mark_attendance'),
     path('worker/upload-update/', views.worker_upload_update, name='worker_upload_update'),
     path('worker/upload-bill/', views.worker_upload_bill, name='worker_upload_bill'),
@@ -62,6 +66,7 @@ urlpatterns = [
     path('customer/sites/', views.customer_sites, name='customer_sites'),
     path('customer/updates/', views.customer_updates, name='customer_updates'),
     path('customer/bills/', views.customer_bills, name='customer_bills'),
+    path('customer/tasks/', views.customer_tasks, name='customer_tasks'),
 
     # ── Profile Settings — all roles (Feature 5) ──────────────────────────────
     path('profile/', views.profile_settings, name='profile_settings'),

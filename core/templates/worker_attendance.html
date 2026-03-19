@@ -32,50 +32,8 @@
   </div>
 </div>
 
-<div class="card" style="margin-bottom:24px;">
-  <div class="section-header">
-    <span class="section-title">⏱️ Mark Today's Attendance</span>
-    <span style="font-size:13px; color:var(--text-secondary); font-weight:500;">{{ today|date:"l, M d, Y" }}</span>
-  </div>
-  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px;">
-    <div style="background:#FFF8E1; border:1px solid #FFE082; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-weight:700; color:#F57C00; font-size:14px;">🌅 Early Morning</div>
-      <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px;">
-        {% csrf_token %}<input type="hidden" name="slot" value="early">
-        {% if 'early' in marked_slots %}
-          {% if marked_slots.early %}<span class="badge badge-present">✅ Present</span>{% else %}<span class="badge badge-absent">❌ Absent</span>{% endif %}
-        {% else %}
-          <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">Present</button>
-          <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">Absent</button>
-        {% endif %}
-      </form>
-    </div>
-    <div style="background:#E3F2FD; border:1px solid #90CAF9; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-weight:700; color:#1565C0; font-size:14px;">☀️ Morning</div>
-      <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px;">
-        {% csrf_token %}<input type="hidden" name="slot" value="morning">
-        {% if 'morning' in marked_slots %}
-          {% if marked_slots.morning %}<span class="badge badge-present">✅ Present</span>{% else %}<span class="badge badge-absent">❌ Absent</span>{% endif %}
-        {% else %}
-          <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">Present</button>
-          <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">Absent</button>
-        {% endif %}
-      </form>
-    </div>
-    <div style="background:#E8F5E9; border:1px solid #A5D6A7; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-weight:700; color:#2E7D32; font-size:14px;">🌤️ Afternoon</div>
-      <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px;">
-        {% csrf_token %}<input type="hidden" name="slot" value="afternoon">
-        {% if 'afternoon' in marked_slots %}
-          {% if marked_slots.afternoon %}<span class="badge badge-present">✅ Present</span>{% else %}<span class="badge badge-absent">❌ Absent</span>{% endif %}
-        {% else %}
-          <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">Present</button>
-          <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">Absent</button>
-        {% endif %}
-      </form>
-    </div>
-  </div>
-</div>
+
+
 
 <div class="card">
   <div style="font-size:14px; font-weight:700; margin-bottom:14px; padding-left:12px; border-left:3px solid var(--primary-color);">📅 Day-by-Day Attendance</div>

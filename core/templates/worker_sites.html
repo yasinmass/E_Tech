@@ -1,60 +1,158 @@
 {% extends 'base.html' %}
-{% block title %}My Sites - E-Tech Builders{% endblock %}
 {% block content %}
 
-<div class="page-header">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
   <div>
-    <h2>🏗️ All Sites</h2>
-    <p class="page-subtitle">All active construction sites. Sites marked "Your Site" are assigned to you.</p>
+    <div style="font-size:20px;font-weight:600;color:#1A1A2E;">🏗️ All Sites</div>
+    <div style="font-size:13px;color:#5A6A85;margin-top:2px;">All active construction sites — view only.</div>
   </div>
 </div>
 
-{% if sites %}
-<div class="grid-2">
-  {% for site in sites %}
-  <div class="card" style="margin-bottom:0;">
-    <div style="display:flex; align-items:flex-start; gap:14px;">
-      <div
-        style="width:44px; height:44px; background:#E3F2FD; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
-        🏗️</div>
-      <div style="flex:1;">
-        <div style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
-          {{ site.name }}
-          {% if user in site.workers.all %}
-            <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;">
-              ✓ Your Site
-            </span>
-          {% endif %}
-        </div>
-        {% if site.address %}
-        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:6px;">📍 {{ site.address }}</div>
-        {% endif %}
-        {% if site.customer %}
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">
-          <strong>Customer:</strong> {{ site.customer.get_full_name|default:site.customer.username }}
-        </div>
-        {% endif %}
-        {% if site.owner_name %}
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">
-          <strong>Owner:</strong> {{ site.owner_name }}{% if site.owner_phone %} — {{ site.owner_phone }}{% endif %}
-        </div>
-        {% endif %}
-        {% if site.location %}
-        <a href="{{ site.location }}" target="_blank"
-          style="display:inline-block; background:#EBF4FF; color:#1565C0; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:500; text-decoration:none;">
-          View on Map
-        </a>
-        {% endif %}
+<div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th>Site</th>
+        <th>Owner Name</th>
+        <th>Owner Phone</th>
+        <th>Address</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for site in sites %}
+      <tr onclick="openSiteModal(this)" style="cursor:pointer;"
+        data-name="{{ site.name }}"
+        data-owner="{{ site.owner_name }}"
+        data-phone="{{ site.owner_phone }}"
+        data-address="{{ site.address }}"
+        data-status="{{ site.status }}"
+        data-location="{{ site.location|default:'' }}"
+        data-photo="{% if site.site_photo %}{{ site.site_photo.url }}{% endif %}"
+        data-owner-photo="{% if site.owner_photo %}{{ site.owner_photo.url }}{% endif %}"
+        data-assigned="{% if user in site.workers.all %}yes{% else %}no{% endif %}">
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            {% if site.site_photo %}
+              <img src="{{ site.site_photo.url }}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">
+            {% else %}
+              <div style="width:40px;height:40px;border-radius:8px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:18px;">🏗️</div>
+            {% endif %}
+            <div>
+              <div style="font-weight:500;color:#1A1A2E;">{{ site.name }}</div>
+              {% if user in site.workers.all %}
+                <span style="background:#E8F5E9;color:#2E7D32;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;">✓ Your Site</span>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+        <td>{{ site.owner_name }}</td>
+        <td>{{ site.owner_phone }}</td>
+        <td style="color:#5A6A85;">{{ site.address }}</td>
+        <td>
+          <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+            {% if site.status == 'Completed' %}background:#E8F5E9;color:#2E7D32;
+            {% elif site.status == 'In Progress' %}background:#E3F2FD;color:#1565C0;
+            {% else %}background:#FFF8E1;color:#F57C00;{% endif %}">
+            {{ site.status }}
+          </span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align:center;padding:40px;color:#5A6A85;">No sites available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Site Detail Modal — exact same as admin -->
+<div id="siteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:540px;max-width:95%;overflow:hidden;position:relative;">
+    <div style="background:#1A73E8;padding:20px 24px;display:flex;align-items:center;gap:16px;position:relative;">
+      <img id="sm-site-photo" style="width:56px;height:56px;border-radius:10px;object-fit:cover;display:none;">
+      <div id="sm-site-initials" style="width:56px;height:56px;border-radius:10px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;">🏗️</div>
+      <div>
+        <div id="sm-name" style="font-size:18px;font-weight:600;color:#fff;"></div>
+        <div id="sm-status-header" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
       </div>
+      <button onclick="closeSiteModal()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;">×</button>
+    </div>
+    <div style="padding:20px 24px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Address</div>
+          <div id="sm-address" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
+        </div>
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Status</div>
+          <div id="sm-status" style="font-size:13px;font-weight:500;"></div>
+        </div>
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Owner Name</div>
+          <div id="sm-owner" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
+        </div>
+        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Owner Phone</div>
+          <div id="sm-phone" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
+        </div>
+      </div>
+      <div id="sm-owner-photo-wrap" style="display:none;margin-bottom:16px;">
+        <div style="font-size:11px;color:#5A6A85;text-transform:uppercase;margin-bottom:6px;">Owner Photo</div>
+        <img id="sm-owner-photo" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #DDEEFF;">
+      </div>
+      <div id="sm-location-wrap" style="display:none;margin-bottom:16px;">
+        <a id="sm-location-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#EBF4FF;color:#1565C0;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;">
+          📍 View on Google Maps
+        </a>
+      </div>
+      <button onclick="closeSiteModal()" style="width:100%;padding:10px;border-radius:8px;background:#1A73E8;color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;">Close</button>
     </div>
   </div>
-  {% endfor %}
 </div>
-{% else %}
-<div class="card" style="text-align:center; padding:40px;">
-  <div style="font-size:48px; margin-bottom:12px;">🏗️</div>
-  <p style="color:var(--text-secondary);">No construction sites have been added yet.</p>
-</div>
-{% endif %}
+
+<script>
+function openSiteModal(row) {
+  const status = row.dataset.status;
+  document.getElementById('sm-name').textContent = row.dataset.name;
+  document.getElementById('sm-owner').textContent = row.dataset.owner;
+  document.getElementById('sm-phone').textContent = row.dataset.phone;
+  document.getElementById('sm-address').textContent = row.dataset.address;
+  document.getElementById('sm-status-header').textContent = status;
+  const statusEl = document.getElementById('sm-status');
+  statusEl.textContent = status;
+  if(status==='Completed') statusEl.style.color='#2E7D32';
+  else if(status==='In Progress') statusEl.style.color='#1565C0';
+  else statusEl.style.color='#F57C00';
+  const photo = row.dataset.photo;
+  if(photo){
+    document.getElementById('sm-site-photo').src=photo;
+    document.getElementById('sm-site-photo').style.display='block';
+    document.getElementById('sm-site-initials').style.display='none';
+  } else {
+    document.getElementById('sm-site-photo').style.display='none';
+    document.getElementById('sm-site-initials').style.display='flex';
+  }
+  const ownerPhoto = row.dataset.ownerPhoto;
+  if(ownerPhoto){
+    document.getElementById('sm-owner-photo').src=ownerPhoto;
+    document.getElementById('sm-owner-photo-wrap').style.display='block';
+  } else {
+    document.getElementById('sm-owner-photo-wrap').style.display='none';
+  }
+  const location = row.dataset.location;
+  if(location){
+    document.getElementById('sm-location-link').href=location;
+    document.getElementById('sm-location-wrap').style.display='block';
+  } else {
+    document.getElementById('sm-location-wrap').style.display='none';
+  }
+  document.getElementById('siteModal').style.display='flex';
+}
+function closeSiteModal(){
+  document.getElementById('siteModal').style.display='none';
+}
+</script>
 
 {% endblock %}

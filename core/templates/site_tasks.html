@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% block title %}{{ site.name }} — Tasks{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+  <div>
+    <a href="{% url 'admin_sites' %}" style="font-size:12px;color:#1A73E8;text-decoration:none;">← Back to Sites</a>
+    <h2 style="font-size:20px;font-weight:700;color:#1A1A2E;margin-top:4px;">📌 Tasks — {{ site.name }}</h2>
+    <p style="font-size:13px;color:#5A6A85;margin-top:2px;">All tasks assigned to this site.</p>
+  </div>
+  <button onclick="openTaskModal(this)" data-site-id="{{ site.id }}" data-site-name="{{ site.name }}"
+    style="background:#534AB7;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;">
+    ＋ Assign Task
+  </button>
+</div>
+
+{% if tasks %}
+{% for task in tasks %}
+<div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;padding:18px 20px;margin-bottom:12px;position:relative;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+    <div style="flex:1;">
+      <div style="font-size:15px;font-weight:600;color:#1A1A2E;margin-bottom:6px;">{{ task.title }}</div>
+      {% if task.description %}
+        <div style="font-size:13px;color:#5A6A85;margin-bottom:10px;">{{ task.description }}</div>
+      {% endif %}
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:#5A6A85;">
+        {% if task.due_date %}<span>📅 Due: {{ task.due_date|date:"M d, Y" }}</span>{% endif %}
+        <span>👷 {{ task.assigned_workers.count }} worker(s)</span>
+        <span>Created: {{ task.created_at|date:"M d, Y" }}</span>
+      </div>
+      {% if task.assigned_workers.all %}
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+        {% for worker in task.assigned_workers.all %}
+        <span style="background:#EBF4FF;color:#1565C0;font-size:11px;padding:3px 10px;border-radius:20px;">
+          {{ worker.get_full_name|default:worker.username }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:100px;">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">
+        <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+          {% if task.priority == 'High' %}background:#FFEBEE;color:#C62828;
+          {% elif task.priority == 'Medium' %}background:#FFF8E1;color:#F57C00;
+          {% else %}background:#E8F5E9;color:#2E7D32;{% endif %}">
+          {{ task.priority }}
+        </span>
+        <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+          {% if task.status == 'Done' %}background:#E8F5E9;color:#2E7D32;
+          {% elif task.status == 'In Progress' %}background:#E3F2FD;color:#1565C0;
+          {% else %}background:#FFF8E1;color:#F57C00;{% endif %}">
+          {{ task.status }}
+        </span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button onclick="openEditModal(this)"
+          data-task-id="{{ task.id }}"
+          data-title="{{ task.title }}"
+          data-description="{{ task.description }}"
+          data-priority="{{ task.priority }}"
+          data-status="{{ task.status }}"
+          data-due-date="{{ task.due_date|date:'Y-m-d' }}"
+          data-workers="{% for w in task.assigned_workers.all %}{{ w.id }},{{ w.get_full_name|default:w.username }};{% endfor %}"
+          style="background:#EBF4FF;color:#1565C0;border:none;padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer;">
+          ✏️ Edit
+        </button>
+        <form method="post" action="{% url 'delete_task' task.id %}" style="margin:0;" onsubmit="return confirm('Delete this task?')">
+          {% csrf_token %}
+          <button type="submit" style="background:#FFEBEE;color:#C62828;border:none;padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer;">
+            🗑️ Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:60px;background:#fff;border-radius:12px;border:1px solid #DDEEFF;">
+  <div style="font-size:40px;margin-bottom:12px;">📋</div>
+  <div style="font-size:15px;font-weight:600;color:#1A1A2E;">No tasks yet for {{ site.name }}</div>
+  <div style="font-size:13px;color:#5A6A85;margin-top:4px;">Click "Assign Task" to add the first task.</div>
+</div>
+{% endif %}
+
+<!-- Assign Task Modal (same as admin_sites) -->
+<div id="taskModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:1001;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:500px;max-width:95%;padding:24px;position:relative;max-height:90vh;overflow-y:auto;">
+    <button onclick="closeTaskModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#5A6A85;">×</button>
+    <div style="font-size:16px;font-weight:600;color:#1A1A2E;margin-bottom:4px;padding-left:12px;border-left:4px solid #534AB7;">📋 Assign Task</div>
+    <div id="task-site-label" style="font-size:12px;color:#5A6A85;margin-bottom:16px;padding-left:16px;"></div>
+    <form method="post" action="{% url 'assign_task_for_site' %}" id="taskForm">
+      {% csrf_token %}
+      <input type="hidden" name="site_id" id="task-site-id" value="{{ site.id }}">
+      <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Task Title</label>
+      <input type="text" name="title" required placeholder="e.g. Install main panel wiring"
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 12px;font-size:13px;margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Description</label>
+      <textarea name="description" placeholder="Describe the task..."
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;padding:10px 12px;font-size:13px;resize:vertical;min-height:70px;margin-bottom:12px;"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Priority</label>
+          <select name="priority" style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 12px;font-size:13px;">
+            <option>High</option><option selected>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Due Date</label>
+          <input type="date" name="due_date" style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 12px;font-size:13px;">
+        </div>
+      </div>
+      <div style="height:1px;background:#F0F7FF;margin:12px 0;"></div>
+      <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Search &amp; Assign Workers</label>
+      <input type="text" id="worker-search-input" placeholder="Type worker name..."
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 12px;font-size:13px;margin-bottom:8px;"
+        oninput="searchWorkersLive(this.value)">
+      <div id="worker-search-results" style="display:none;border:1px solid #DDEEFF;border-radius:8px;overflow:hidden;margin-bottom:12px;"></div>
+      <div id="selected-workers-display" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;min-height:36px;">
+        <span style="font-size:12px;color:#B4B2A9;">No workers selected yet</span>
+      </div>
+      <div id="selected-worker-inputs"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button type="button" onclick="closeTaskModal()" style="flex:1;padding:10px;border-radius:8px;background:#F1EFE8;color:#444;border:none;font-size:13px;cursor:pointer;">Cancel</button>
+        <button type="submit" style="flex:2;padding:10px;border-radius:8px;background:#534AB7;color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;">✓ Assign Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div id="editModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:1001;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:500px;max-width:95%;padding:24px;position:relative;max-height:90vh;overflow-y:auto;">
+    <button onclick="closeEditModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#5A6A85;">×</button>
+    <div style="font-size:16px;font-weight:600;color:#1A1A2E;margin-bottom:16px;padding-left:12px;border-left:4px solid #1A73E8;">✏️ Edit Task</div>
+    <form method="post" id="editTaskForm">
+      {% csrf_token %}
+      <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Task Title</label>
+      <input type="text" name="title" id="edit-title" required
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 12px;font-size:13px;margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Description</label>
+      <textarea name="description" id="edit-description"
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;padding:10px 12px;font-size:13px;resize:vertical;min-height:70px;margin-bottom:12px;"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Priority</label>
+          <select name="priority" id="edit-priority" style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 10px;font-size:13px;">
+            <option>High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Status</label>
+          <select name="status" id="edit-status" style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 10px;font-size:13px;">
+            <option>Pending</option><option>In Progress</option><option>Done</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:500;color:#5A6A85;display:block;margin-bottom:5px;">Due Date</label>
+          <input type="date" name="due_date" id="edit-due-date" style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 10px;font-size:13px;">
+        </div>
+      </div>
+      <div id="edit-selected-workers-display" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;min-height:36px;">
+        <span style="font-size:12px;color:#B4B2A9;">No workers selected</span>
+      </div>
+      <div id="edit-selected-worker-inputs"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button type="button" onclick="closeEditModal()" style="flex:1;padding:10px;border-radius:8px;background:#F1EFE8;color:#444;border:none;font-size:13px;cursor:pointer;">Cancel</button>
+        <button type="submit" style="flex:2;padding:10px;border-radius:8px;background:#1A73E8;color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;">💾 Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const selectedWorkers = [];
+
+function openTaskModal(btn) {
+  document.getElementById('task-site-id').value = btn.dataset.siteId;
+  document.getElementById('task-site-label').textContent = 'Site: ' + btn.dataset.siteName;
+  selectedWorkers.length = 0;
+  renderSelectedWorkers();
+  document.getElementById('worker-search-input').value = '';
+  document.getElementById('worker-search-results').style.display = 'none';
+  document.getElementById('taskModal').style.display = 'flex';
+}
+function closeTaskModal() { document.getElementById('taskModal').style.display = 'none'; }
+
+function openEditModal(btn) {
+  document.getElementById('edit-title').value = btn.dataset.title;
+  document.getElementById('edit-description').value = btn.dataset.description;
+  document.getElementById('edit-priority').value = btn.dataset.priority;
+  document.getElementById('edit-status').value = btn.dataset.status;
+  document.getElementById('edit-due-date').value = btn.dataset.dueDate;
+  document.getElementById('editTaskForm').action = '/mgmt/tasks/' + btn.dataset.taskId + '/edit/';
+  // Pre-populate workers
+  const editSel = [];
+  if (btn.dataset.workers) {
+    btn.dataset.workers.split(';').filter(Boolean).forEach(entry => {
+      const [id, name] = entry.split(',');
+      if(id && name) editSel.push({id: parseInt(id), name});
+    });
+  }
+  renderEditWorkers(editSel);
+  document.getElementById('editModal').style.display = 'flex';
+}
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+
+function renderEditWorkers(list) {
+  const display = document.getElementById('edit-selected-workers-display');
+  const inputs = document.getElementById('edit-selected-worker-inputs');
+  if (!list.length) {
+    display.innerHTML = '<span style="font-size:12px;color:#B4B2A9;">No workers selected</span>';
+    inputs.innerHTML = '';
+    return;
+  }
+  display.innerHTML = list.map(w => `
+    <span style="background:#EBF4FF;color:#1565C0;font-size:11px;padding:3px 10px;border-radius:20px;">${w.name}</span>
+  `).join('');
+  inputs.innerHTML = list.map(w => `<input type="hidden" name="worker_ids" value="${w.id}">`).join('');
+}
+
+function searchWorkersLive(query) {
+  if (!query) { document.getElementById('worker-search-results').style.display = 'none'; return; }
+  fetch(`/mgmt/api/search-workers/?q=${encodeURIComponent(query)}`)
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('worker-search-results');
+      if (!data.workers.length) { el.style.display = 'none'; return; }
+      el.innerHTML = data.workers.map(w => `
+        <div onclick="addWorker(${w.id}, '${w.name.replace(/'/g, '&apos;')}')"
+          style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #F0F7FF;">
+          <div style="width:32px;height:32px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#1A73E8;">
+            ${w.name[0].toUpperCase()}</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:#1A1A2E;">${w.name}</div>
+            <div style="font-size:11px;color:#5A6A85;">${w.role}</div>
+          </div>
+        </div>
+      `).join('');
+      el.style.display = 'block';
+    });
+}
+
+function addWorker(id, name) {
+  if (selectedWorkers.find(w => w.id === id)) return;
+  selectedWorkers.push({id, name});
+  renderSelectedWorkers();
+  document.getElementById('worker-search-input').value = '';
+  document.getElementById('worker-search-results').style.display = 'none';
+}
+
+function removeWorker(id) {
+  const i = selectedWorkers.findIndex(w => w.id === id);
+  if (i > -1) selectedWorkers.splice(i, 1);
+  renderSelectedWorkers();
+}
+
+function renderSelectedWorkers() {
+  const display = document.getElementById('selected-workers-display');
+  const inputs = document.getElementById('selected-worker-inputs');
+  if (!selectedWorkers.length) {
+    display.innerHTML = '<span style="font-size:12px;color:#B4B2A9;">No workers selected yet</span>';
+    inputs.innerHTML = '';
+    return;
+  }
+  display.innerHTML = selectedWorkers.map(w => `
+    <div style="display:flex;align-items:center;gap:6px;background:#EBF4FF;border:1px solid #DDEEFF;border-radius:20px;padding:4px 10px;font-size:12px;color:#1565C0;">
+      ${w.name}
+      <button onclick="removeWorker(${w.id})" style="background:none;border:none;cursor:pointer;color:#C62828;font-size:14px;padding:0;">×</button>
+    </div>
+  `).join('');
+  inputs.innerHTML = selectedWorkers.map(w => `<input type="hidden" name="worker_ids" value="${w.id}">`).join('');
+}
+</script>
+
+{% endblock %}

@@ -110,7 +110,7 @@ class SiteEditForm(forms.ModelForm):
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'worker', 'site']
+        fields = ['title', 'description', 'site', 'assigned_workers', 'priority', 'due_date', 'status']
 
 class AttendanceForm(forms.ModelForm):
     class Meta:

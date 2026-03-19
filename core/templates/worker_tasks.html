@@ -9,49 +9,65 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr><th>Task</th><th>Site</th><th>Date</th><th>Status</th><th>Action</th></tr>
-      </thead>
-      <tbody>
-        {% for task in tasks %}
-        <tr>
-          <td>
-            <strong>{{ task.title }}</strong>
-            {% if task.description %}<br><span style="font-size:12px; color:var(--text-secondary);">{{ task.description|truncatewords:10 }}</span>{% endif %}
-          </td>
-          <td>{{ task.site.name }}</td>
-          <td style="font-size:13px; color:var(--text-secondary);">{{ task.created_at|date:"M d, Y" }}</td>
-          <td>
-            {% if task.is_completed %}
-              <span class="badge badge-done">✔ Completed</span>
-            {% else %}
-              <span class="badge badge-pending">⏳ Pending</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if not task.is_completed %}
-            <form method="post" action="{% url 'worker_mark_task_complete' task.id %}" style="margin:0;">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-success btn-sm">Mark Complete</button>
-            </form>
-            {% else %}
-            <span style="color:var(--text-secondary); font-size:13px;">—</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" style="text-align:center; color:var(--text-secondary); padding:32px;">
-            No tasks assigned to you yet.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% if tasks %}
+{% for task in tasks %}
+<div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;padding:18px;margin-bottom:12px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
+    <div>
+      <div style="font-size:15px;font-weight:600;color:#1A1A2E;">{{ task.title }}</div>
+      {% if task.site %}<div style="font-size:12px;color:#5A6A85;margin-top:2px;">🏗️ {{ task.site.name }}</div>{% endif %}
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+        {% if task.priority == 'High' %}background:#FFEBEE;color:#C62828;
+        {% elif task.priority == 'Medium' %}background:#FFF8E1;color:#F57C00;
+        {% else %}background:#E8F5E9;color:#2E7D32;{% endif %}">
+        {{ task.priority }}
+      </span>
+      <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+        {% if task.status == 'Done' %}background:#E8F5E9;color:#2E7D32;
+        {% elif task.status == 'In Progress' %}background:#E3F2FD;color:#1565C0;
+        {% else %}background:#FFF8E1;color:#F57C00;{% endif %}">
+        {{ task.status }}
+      </span>
+    </div>
   </div>
+
+  {% if task.description %}
+    <div style="font-size:13px;color:#5A6A85;margin-bottom:10px;">{{ task.description }}</div>
+  {% endif %}
+
+  <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:#5A6A85;margin-bottom:10px;">
+    {% if task.due_date %}<span>📅 Due: {{ task.due_date|date:"M d, Y" }}</span>{% endif %}
+    <span>Added: {{ task.created_at|date:"M d, Y" }}</span>
+  </div>
+
+  {% if task.status != 'Done' %}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+    {% if task.status != 'In Progress' %}
+    <form method="post" action="{% url 'update_task_status' task.id %}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="In Progress">
+      <button type="submit" style="background:#E3F2FD;color:#1565C0;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;">▶ In Progress</button>
+    </form>
+    {% endif %}
+    <form method="post" action="{% url 'update_task_status' task.id %}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="Done">
+      <button type="submit" style="background:#E8F5E9;color:#2E7D32;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;">✓ Mark Done</button>
+    </form>
+  </div>
+  {% else %}
+  <div style="font-size:12px;color:#2E7D32;font-weight:500;margin-top:8px;">✅ Completed</div>
+  {% endif %}
 </div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:60px;background:#fff;border-radius:12px;border:1px solid #DDEEFF;">
+  <div style="font-size:40px;margin-bottom:12px;">📋</div>
+  <div style="font-size:15px;font-weight:600;color:#1A1A2E;">No tasks assigned yet</div>
+  <div style="font-size:13px;color:#5A6A85;margin-top:4px;">Tasks assigned to you will appear here.</div>
+</div>
+{% endif %}
 
 {% endblock %}

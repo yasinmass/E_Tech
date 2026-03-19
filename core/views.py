@@ -256,10 +256,12 @@ def worker_mark_attendance(request):
 @role_required('worker')
 def worker_mark_task_complete(request, task_id):
     if request.method == "POST":
-        task = get_object_or_404(Task, id=task_id, worker=request.user)
-        task.is_completed = True
-        task.save()
-    return redirect('worker_dashboard')
+        task = get_object_or_404(Task, id=task_id)
+        if request.user in task.assigned_workers.all():
+            task.status = 'Done'
+            task.is_completed = True
+            task.save()
+    return redirect('worker_my_tasks')
 
 
 @role_required('worker')
@@ -337,7 +339,7 @@ def admin_sites(request):
 
 @role_required('admin')
 def admin_tasks(request):
-    return render(request, 'admin_tasks.html', {'tasks': Task.objects.select_related('worker', 'site').order_by('-created_at')})
+    return render(request, 'admin_tasks.html', {'tasks': Task.objects.select_related('site').prefetch_related('assigned_workers').order_by('-created_at')})
 
 @role_required('admin')
 def admin_all_attendance(request):
@@ -382,7 +384,7 @@ def admin_all_bills(request):
 # --- WORKER VIEWS ---
 @role_required('worker')
 def worker_my_tasks(request):
-    return render(request, 'worker_tasks.html', {'tasks': Task.objects.filter(worker=request.user).select_related('site').order_by('-created_at')})
+    return render(request, 'worker_tasks.html', {'tasks': Task.objects.filter(assigned_workers=request.user).select_related('site').order_by('-created_at')})
 
 @role_required('worker')
 def worker_my_sites(request):
@@ -443,7 +445,6 @@ def worker_my_attendance(request):
             current += timedelta(days=1)
     
     day_rows.reverse()
-    marked_slots = {att.slot: att.is_present for att in Attendance.objects.filter(worker=request.user, date=date.today())}
 
     return render(request, 'worker_attendance.html', {
         'present_slots': present_slots,
@@ -451,8 +452,6 @@ def worker_my_attendance(request):
         'total_slots': total_slots,
         'attendance_pct': attendance_pct,
         'day_rows': day_rows,
-        'today': date.today(),
-        'marked_slots': marked_slots,
     })
 
 @role_required('worker')
@@ -909,3 +908,132 @@ def edit_tool(request, tool_id):
     else:
         form = ToolForm(instance=tool)
     return render(request, 'form_template.html', {'form': form, 'title': 'Edit Tool', 'back_url': 'tools_list'})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Assign Task for Site (Admin only — called from Sites page modal)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def assign_task_for_site(request):
+    if request.method == 'POST' and request.user.role == 'admin':
+        site_id = request.POST.get('site_id')
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        priority = request.POST.get('priority', 'Medium')
+        due_date = request.POST.get('due_date') or None
+        worker_ids = request.POST.getlist('worker_ids')
+        site = get_object_or_404(Site, id=site_id)
+        task = Task.objects.create(
+            title=title,
+            description=description,
+            site=site,
+            priority=priority,
+            due_date=due_date,
+        )
+        if worker_ids:
+            task.assigned_workers.set(worker_ids)
+        messages.success(request, f'Task "{title}" assigned successfully.')
+    return redirect('admin_sites')
+
+
+@login_required
+def search_workers_api(request):
+    query = request.GET.get('q', '')
+    from django.db.models import Q
+    workers = User.objects.filter(role='worker').filter(
+        Q(username__icontains=query) |
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query)
+    )[:10]
+    data = []
+    for w in workers:
+        designation = 'Worker'
+        if hasattr(w, 'worker_profile'):
+            designation = getattr(w.worker_profile, 'designation', 'Worker') or 'Worker'
+        data.append({'id': w.id, 'name': w.get_full_name() or w.username, 'role': designation})
+    return JsonResponse({'workers': data})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Site Tasks — Admin view of tasks for a specific site
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def site_tasks(request, site_id):
+    if request.user.role != 'admin':
+        return redirect('login')
+    site = get_object_or_404(Site, id=site_id)
+    tasks = Task.objects.filter(site=site).prefetch_related('assigned_workers').order_by('-created_at')
+    return render(request, 'site_tasks.html', {'site': site, 'tasks': tasks})
+
+
+@login_required
+def edit_task(request, task_id):
+    if request.user.role != 'admin':
+        return redirect('login')
+    task = get_object_or_404(Task, id=task_id)
+    if request.method == 'POST':
+        task.title = request.POST.get('title', task.title)
+        task.description = request.POST.get('description', task.description)
+        task.priority = request.POST.get('priority', task.priority)
+        task.status = request.POST.get('status', task.status)
+        task.due_date = request.POST.get('due_date') or None
+        worker_ids = request.POST.getlist('worker_ids')
+        task.save()
+        if worker_ids:
+            task.assigned_workers.set(worker_ids)
+        messages.success(request, f'Task "{task.title}" updated.')
+        return redirect('site_tasks', site_id=task.site.id)
+    workers = User.objects.filter(role='worker')
+    return render(request, 'edit_task.html', {'task': task, 'workers': workers})
+
+
+@login_required
+def delete_task(request, task_id):
+    if request.user.role != 'admin':
+        return redirect('login')
+    task = get_object_or_404(Task, id=task_id)
+    site_id = task.site.id if task.site else None
+    task.delete()
+    messages.success(request, 'Task deleted.')
+    if site_id:
+        return redirect('site_tasks', site_id=site_id)
+    return redirect('admin_sites')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Worker: Update Task Status
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def update_task_status(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    if request.user in task.assigned_workers.all():
+        new_status = request.POST.get('status')
+        if new_status in ['Pending', 'In Progress', 'Done']:
+            task.status = new_status
+            task.is_completed = (new_status == 'Done')
+            task.save()
+    return redirect('worker_my_tasks')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Customer: Tasks for their site
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def customer_tasks(request):
+    if request.user.role != 'customer':
+        return redirect('login')
+    try:
+        site = Site.objects.get(customer=request.user)
+        tasks = Task.objects.filter(site=site).prefetch_related(
+            'assigned_workers',
+            'assigned_workers__worker_profile',
+        ).order_by('-created_at')
+    except Site.DoesNotExist:
+        site = None
+        tasks = []
+    return render(request, 'customer_tasks.html', {'tasks': tasks, 'site': site})
+

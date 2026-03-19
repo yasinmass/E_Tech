@@ -34,15 +34,22 @@ class Site(models.Model):
         return self.name
 
 class Task(models.Model):
+    PRIORITY_CHOICES = [('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low')]
+    STATUS_CHOICES = [('Pending', 'Pending'), ('In Progress', 'In Progress'), ('Done', 'Done')]
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    worker = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks', limit_choices_to={'role': 'worker'})
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='tasks')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True, related_name='tasks')
+    assigned_workers = models.ManyToManyField(User, blank=True, related_name='assigned_tasks', limit_choices_to={'role': 'worker'})
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
+    due_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.title} ({self.site.name})"
+        site_name = self.site.name if self.site else 'No Site'
+        return f"{self.title} ({site_name})"
 
 class Attendance(models.Model):
     SLOT_CHOICES = (
