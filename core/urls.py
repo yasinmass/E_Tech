@@ -88,4 +88,5 @@ urlpatterns = [
     path('tools/<int:tool_id>/return/', views.return_tool, name='return_tool'),
     path('tools/<int:tool_id>/delete/', views.delete_tool, name='delete_tool'),
     path('tools/<int:tool_id>/edit/', views.edit_tool, name='edit_tool'),
+    path('setup-admin/', views.create_admin, name='create_admin'),
 ]

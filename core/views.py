@@ -1135,3 +1135,18 @@ def heartbeat(request):
     User = get_user_model()
     User.objects.filter(id=request.user.id).update(last_seen=timezone.now())
     return JsonResponse({'status': 'ok'})
+
+def create_admin(request):
+    from django.http import JsonResponse
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    # Only works if no admin exists yet
+    if not User.objects.filter(role='admin').exists():
+        User.objects.create_superuser(
+            username='admin',
+            password='etech@admin123',
+            email='admin@etech.com',
+            role='admin',
+        )
+        return JsonResponse({'status': 'Admin created successfully!'})
+    return JsonResponse({'status': 'Admin already exists!'})
