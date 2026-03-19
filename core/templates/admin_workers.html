@@ -18,9 +18,8 @@
           <th>Name</th>
           <th>Username</th>
           <th>Phone</th>
-          <th>Attendance Stats</th>
-          <th>Sites</th>
-          <th>Mark</th>
+          <th>Age</th>
+          <th>Attendance</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -32,11 +31,6 @@
             data-username="{{ w.username }}"
             data-phone="{{ w.phone|default:'—' }}"
             data-sites="{{ w.assigned_sites.count }}"
-            data-present="{{ w.present_days }}"
-            data-absent="{{ w.absent_days }}"
-            data-pct="{{ w.pct }}"
-            data-tot="{{ w.total_slots }}"
-            data-rem="{{ w.remaining_slots }}"
             data-early="{{ w.today_early }}"
             data-morning="{{ w.today_morning }}"
             data-afternoon="{{ w.today_afternoon }}"
@@ -53,15 +47,10 @@
           </td>
           <td><span class="code-pill">{{ w.username }}</span></td>
           <td style="color:var(--text-secondary);">{{ w.phone|default:"—" }}</td>
-          <td>
-            <span class="badge badge-present">{{ w.present_days }} Full Days</span>&nbsp;
-            <span class="badge badge-absent">{{ w.absent_days }} Absent</span>
-            <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Slots: {{ w.total_slots }} | Carry: {{ w.remaining_slots }}</div>
-          </td>
-          <td><span class="badge badge-inprogress">{{ w.assigned_sites.count }} site(s)</span></td>
+          <td>{{ w.worker_profile.age|default:"—" }}</td>
           <td>
             <button class="btn btn-sm" onclick="event.stopPropagation(); openWorkerModal(this.closest('tr'))">
-              🎯 Mark Attendance
+              🎯 Attendance
             </button>
           </td>
           <td onclick="event.stopPropagation()" style="white-space:nowrap;">
@@ -96,26 +85,6 @@
     </div>
 
     <div class="modal-body">
-      <!-- Stats Row -->
-      <div style="display:flex; gap:0; background:#F0F7FF; border-radius:10px; border:1px solid #DDEEFF; overflow:hidden; margin-bottom:20px;">
-        <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
-          <div id="modalPct" style="font-size:20px; font-weight:700; color:var(--primary-color);">0%</div>
-          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Rate</div>
-        </div>
-        <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
-          <div id="modalPresent" style="font-size:20px; font-weight:700; color:#2E7D32;">0</div>
-          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Full Days</div>
-        </div>
-        <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
-          <div id="modalAbsent" style="font-size:20px; font-weight:700; color:#E53935;">0</div>
-          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Absent</div>
-        </div>
-        <div style="flex:1; text-align:center; padding:14px 8px;">
-          <div id="modalSlots" style="font-size:20px; font-weight:700; color:#F57C00;">0</div>
-          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Total Slots</div>
-        </div>
-      </div>
-
       <!-- Mark Attendance -->
       <div style="margin-bottom:4px; font-size:14px; font-weight:600; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
         <span>🎯 Mark Today's Attendance</span>
@@ -187,10 +156,6 @@
     document.getElementById('modalUsername').textContent = data.username;
     document.getElementById('modalPhone').textContent = data.phone;
     document.getElementById('modalSites').textContent = data.sites;
-    document.getElementById('modalPct').textContent = data.pct + '%';
-    document.getElementById('modalPresent').textContent = data.present;
-    document.getElementById('modalAbsent').textContent = data.absent;
-    document.getElementById('modalSlots').textContent = data.tot + ' (carry: ' + data.rem + ')';
 
     currentSelections = { early: null, morning: null, afternoon: null };
     resetSlotBtns();

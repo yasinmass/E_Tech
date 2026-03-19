@@ -302,14 +302,6 @@ def customer_dashboard(request):
 def admin_workers(request):
     workers = User.objects.filter(role='worker')
     for worker in workers:
-        tot = Attendance.objects.filter(worker=worker, is_present=True).count()
-        worker.present_days = tot // 2
-        worker.remaining_slots = tot % 2
-        uq = Attendance.objects.filter(worker=worker).values('date').distinct().count()
-        worker.absent_days = max(uq - worker.present_days, 0)
-        worker.total_slots = tot
-        worker.pct = int((worker.present_days / (worker.present_days + worker.absent_days)) * 100) if (worker.present_days + worker.absent_days) > 0 else 0
-        
         today_att = Attendance.objects.filter(worker=worker, date=date.today())
         worker.today_early = "true" if today_att.filter(slot='early', is_present=True).exists() else "false" if today_att.filter(slot='early', is_present=False).exists() else "none"
         worker.today_morning = "true" if today_att.filter(slot='morning', is_present=True).exists() else "false" if today_att.filter(slot='morning', is_present=False).exists() else "none"
