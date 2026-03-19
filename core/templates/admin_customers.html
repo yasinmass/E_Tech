@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Customers - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>🤝 Customers</h2>
+    <p class="page-subtitle">Manage customer accounts and their site assignments.</p>
+  </div>
+  <a href="{% url 'add_customer' %}" class="btn">＋ Add Customer</a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Username</th><th>Email</th><th>Phone</th><th>Assigned Sites</th></tr>
+      </thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr>
+          <td><strong>{{ customer.get_full_name|default:customer.username }}</strong></td>
+          <td><span class="code-pill">{{ customer.username }}</span></td>
+          <td style="color:var(--text-secondary);">{{ customer.email|default:"—" }}</td>
+          <td style="color:var(--text-secondary);">{{ customer.phone|default:"—" }}</td>
+          <td>
+            {% for site in customer.customer_sites.all %}
+              <span class="worker-tag">{{ site.name }}</span>
+            {% empty %}
+              <span style="color:var(--text-secondary); font-size:12px;">No sites yet</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--text-secondary); padding:32px;">
+            No customers yet. <a href="{% url 'add_customer' %}" style="color:var(--primary-color);">Add your first customer →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Customer Overview - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>📊 My Project Overview</h2>
+    <p class="page-subtitle">Welcome back, {{ user.get_full_name|default:user.username }} — here's your
+      project status.</p>
+  </div>
+</div>
+
+<div class="grid-stats">
+  <div class="stat-card">
+    <span class="stat-icon">🏗️</span>
+    <div class="stat-number">{{ sites.count }}</div>
+    <div class="stat-label">My Sites</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">📸</span>
+    <div class="stat-number" style="color:#2E7D32;">{{ updates.count }}</div>
+    <div class="stat-label">Updates</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">🏗️ My Sites</span>
+    <a href="{% url 'customer_sites' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  {% if sites %}
+  <div class="grid-2" style="margin-top:0;">
+    {% for site in sites %}
+    <div style="background:#F0F7FF; border-radius:10px; padding:16px; border:1px solid #DDEEFF;">
+      <div style="font-size:15px; font-weight:700; margin-bottom:6px;">{{ site.name }}</div>
+      {% if site.address %}<p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px;">📍 {{ site.address }}</p>{% endif %}
+      <div style="font-size:12px; color:var(--text-secondary);">
+        Workers: {% for w in site.workers.all %}<span class="worker-tag">{{ w.get_full_name|default:w.username }}</span>{% empty %}None{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--text-secondary); text-align:center; padding:20px;">No sites assigned yet.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">📸 Recent Updates</span>
+    <a href="{% url 'customer_updates' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  {% if updates %}
+  <div class="grid-2" style="margin-top:0;">
+    {% for update in updates|slice:":4" %}
+    <div class="update-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; color:var(--primary-color); font-weight:600;">📍 {{ update.site.name }}</span>
+        <span style="font-size:12px; color:var(--text-secondary);">{{ update.created_at|date:"M d" }}</span>
+      </div>
+      {% if update.text %}<p style="font-size:13px; color:var(--text-secondary); margin:0 0 8px; line-height:1.5;">{{ update.text }}</p>{% endif %}
+      {% if update.image %}<img src="{{ update.image.url }}" alt="Update image">{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--text-secondary); text-align:center; padding:20px;">No updates available yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

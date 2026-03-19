@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>Admin Dashboard</h2>
+    <p class="page-subtitle">Welcome back, {{ user.first_name|default:user.username }} — here's what's happening today.</p>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <a href="{% url 'add_worker' %}" class="btn btn-sm">＋ Add Worker</a>
+    <a href="{% url 'add_site' %}" class="btn btn-sm" style="background:#7C3AED;">＋ Add Site</a>
+    <a href="{% url 'assign_task' %}" class="btn btn-sm" style="background:#0891B2;">＋ Assign Task</a>
+    <a href="{% url 'admin_mark_attendance' %}" class="btn btn-sm btn-success">✔ Attendance</a>
+    <a href="{% url 'admin_upload_bill' %}" class="btn btn-sm btn-warning">＋ Upload Bill</a>
+  </div>
+</div>
+
+<!-- Stat Cards Row -->
+<div class="grid-stats">
+  <div class="stat-card">
+    <span class="stat-icon">👷</span>
+    <div class="stat-number">{{ workers.count }}</div>
+    <div class="stat-label">Workers</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">🏗️</span>
+    <div class="stat-number" style="color:#7C3AED;">{{ sites.count }}</div>
+    <div class="stat-label">Sites</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">📋</span>
+    <div class="stat-number" style="color:#0891B2;">{{ tasks.count }}</div>
+    <div class="stat-label">Tasks</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">📸</span>
+    <div class="stat-number" style="color:#2E7D32;">{{ updates.count }}</div>
+    <div class="stat-label">Updates</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">🧾</span>
+    <div class="stat-number" style="color:#F57C00;">{{ bills.count }}</div>
+    <div class="stat-label">Bills</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">🤝</span>
+    <div class="stat-number" style="color:#0891B2;">{{ customers.count }}</div>
+    <div class="stat-label">Customers</div>
+  </div>
+</div>
+
+<!-- Workers Table -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">👷 Workers</span>
+    <a href="{% url 'admin_workers' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Phone</th>
+          <th>Attendance</th>
+          <th>Sites</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in workers %}
+        <tr>
+          <td><strong>{{ w.get_full_name|default:w.username }}</strong></td>
+          <td><span class="code-pill">{{ w.username }}</span></td>
+          <td style="color:var(--text-secondary);">{{ w.phone|default:"—" }}</td>
+          <td>
+            <span class="badge badge-present">{{ w.present_days }} Days</span>
+            &nbsp;
+            <span class="badge badge-absent">{{ w.absent_days }} Absent</span>
+          </td>
+          <td><span class="badge badge-primary">{{ w.assigned_sites.count }} site(s)</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding:24px;">No workers added yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Sites Table -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">🏗️ Sites</span>
+    <a href="{% url 'admin_sites' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Site</th><th>Customer</th><th>Address</th><th>Workers</th></tr>
+      </thead>
+      <tbody>
+        {% for site in sites %}
+        <tr>
+          <td><strong>{{ site.name }}</strong></td>
+          <td>{{ site.customer.get_full_name|default:site.customer|default:"—" }}</td>
+          <td style="color:var(--text-secondary); font-size:13px;">{{ site.address|default:"—" }}</td>
+          <td>
+            {% for w in site.workers.all %}
+              <span class="worker-tag">{{ w.get_full_name|default:w.username }}</span>
+            {% empty %}—{% endfor %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">No sites added yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tasks Table -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">📋 Tasks</span>
+    <a href="{% url 'admin_tasks' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Worker</th><th>Site</th><th>Date</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for task in tasks|slice:":8" %}
+        <tr>
+          <td>
+            <strong>{{ task.title }}</strong>
+            {% if task.description %}<br><small style="color:var(--text-secondary);">{{ task.description|truncatewords:8 }}</small>{% endif %}
+          </td>
+          <td>{{ task.worker.get_full_name|default:task.worker.username }}</td>
+          <td>{{ task.site.name }}</td>
+          <td style="color:var(--text-secondary); font-size:13px;">{{ task.created_at|date:"M d, Y" }}</td>
+          <td>
+            {% if task.is_completed %}
+              <span class="badge badge-done">✔ Done</span>
+            {% else %}
+              <span class="badge badge-pending">⏳ Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding:24px;">No tasks assigned yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Attendance -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">✔ Attendance — {{ today }}</span>
+    <a href="{% url 'admin_all_attendance' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Worker</th><th>Date</th><th>Slot</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for att in attendances|slice:":10" %}
+        <tr>
+          <td><strong>{{ att.worker.get_full_name|default:att.worker.username }}</strong></td>
+          <td style="color:var(--text-secondary);">{{ att.date|date:"M d, Y" }}</td>
+          <td style="color:var(--text-secondary);">{{ att.get_slot_display }}</td>
+          <td>
+            {% if att.is_present %}
+              <span class="badge badge-present">✔ Present</span>
+            {% else %}
+              <span class="badge badge-absent">✘ Absent</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">No attendance marked yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Latest Work Updates -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">📸 Latest Work Updates</span>
+    <a href="{% url 'admin_updates' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  <div class="grid-2">
+    {% for update in updates|slice:":6" %}
+    <div class="update-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong style="font-size:14px;">{{ update.worker.get_full_name|default:update.worker.username }}</strong>
+        <span style="color:var(--text-secondary); font-size:12px;">{{ update.created_at|date:"M d, Y" }}</span>
+      </div>
+      <div style="color:var(--primary-color); font-size:12px; font-weight:600; margin-bottom:6px;">📍 {{ update.site.name }}</div>
+      {% if update.text %}<p style="font-size:13px; color:var(--text-secondary); margin:0 0 8px;">{{ update.text }}</p>{% endif %}
+      {% if update.image %}<img src="{{ update.image.url }}" alt="Work update image">{% endif %}
+      {% if update.video %}
+        <video controls style="max-width:100%; border-radius:8px; margin-top:10px;">
+          <source src="{{ update.video.url }}" type="video/mp4">
+        </video>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p style="color:var(--text-secondary);">No work updates yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Bills -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">🧾 Bills</span>
+    <a href="{% url 'admin_all_bills' %}" class="btn btn-sm btn-secondary">View All</a>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Amount</th><th>Site</th><th>Uploaded By</th><th>Description</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for bill in bills|slice:":8" %}
+        <tr>
+          <td><strong style="color:#F57C00;">₹{{ bill.amount }}</strong></td>
+          <td>{{ bill.site.name }}</td>
+          <td>{{ bill.uploaded_by.get_full_name|default:bill.uploaded_by|default:"—" }}</td>
+          <td style="color:var(--text-secondary); font-size:13px;">{{ bill.description|default:"—" }}</td>
+          <td style="color:var(--text-secondary); font-size:13px;">{{ bill.date|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding:24px;">No bills uploaded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

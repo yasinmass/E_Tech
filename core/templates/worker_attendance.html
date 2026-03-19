@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}My Attendance - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>🕒 My Attendance</h2>
+    <p class="page-subtitle">Your personal attendance report — slots, dates, and daily breakdown.</p>
+  </div>
+</div>
+
+<div class="grid-stats" style="grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:16px; margin-bottom:24px;">
+  <div class="stat-card" style="border-top:4px solid #2E7D32; padding:20px;">
+    <div style="font-size:11px; font-weight:700; color:#2E7D32; text-transform:uppercase; letter-spacing:0.5px;">Present Slots</div>
+    <div style="font-size:32px; font-weight:700; color:#2E7D32; margin-top:8px; line-height:1;">{{ present_slots }}</div>
+    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">across all sessions</div>
+  </div>
+  <div class="stat-card" style="border-top:4px solid #C62828; padding:20px;">
+    <div style="font-size:11px; font-weight:700; color:#C62828; text-transform:uppercase; letter-spacing:0.5px;">Absent Slots</div>
+    <div style="font-size:32px; font-weight:700; color:#C62828; margin-top:8px; line-height:1;">{{ absent_slots }}</div>
+    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">recorded absences</div>
+  </div>
+  <div class="stat-card" style="border-top:4px solid #1565C0; padding:20px;">
+    <div style="font-size:11px; font-weight:700; color:#1565C0; text-transform:uppercase; letter-spacing:0.5px;">Total Slots</div>
+    <div style="font-size:32px; font-weight:700; color:#1565C0; margin-top:8px; line-height:1;">{{ total_slots }}</div>
+    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">marked entries</div>
+  </div>
+  <div class="stat-card" style="border-top:4px solid #F57C00; padding:20px;">
+    <div style="font-size:11px; font-weight:700; color:#F57C00; text-transform:uppercase; letter-spacing:0.5px;">Attendance %</div>
+    <div style="font-size:32px; font-weight:700; color:#F57C00; margin-top:8px; line-height:1;">{{ attendance_pct }}%</div>
+    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">overall attendance rate</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px;">
+  <div class="section-header">
+    <span class="section-title">⏱️ Mark Today's Attendance</span>
+    <span style="font-size:13px; color:var(--text-secondary); font-weight:500;">{{ today|date:"l, M d, Y" }}</span>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px;">
+    <div style="background:#FFF8E1; border:1px solid #FFE082; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-weight:700; color:#F57C00; font-size:14px;">🌅 Early Morning</div>
+      <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px;">
+        {% csrf_token %}<input type="hidden" name="slot" value="early">
+        {% if 'early' in marked_slots %}
+          {% if marked_slots.early %}<span class="badge badge-present">✅ Present</span>{% else %}<span class="badge badge-absent">❌ Absent</span>{% endif %}
+        {% else %}
+          <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">Present</button>
+          <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">Absent</button>
+        {% endif %}
+      </form>
+    </div>
+    <div style="background:#E3F2FD; border:1px solid #90CAF9; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-weight:700; color:#1565C0; font-size:14px;">☀️ Morning</div>
+      <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px;">
+        {% csrf_token %}<input type="hidden" name="slot" value="morning">
+        {% if 'morning' in marked_slots %}
+          {% if marked_slots.morning %}<span class="badge badge-present">✅ Present</span>{% else %}<span class="badge badge-absent">❌ Absent</span>{% endif %}
+        {% else %}
+          <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">Present</button>
+          <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">Absent</button>
+        {% endif %}
+      </form>
+    </div>
+    <div style="background:#E8F5E9; border:1px solid #A5D6A7; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-weight:700; color:#2E7D32; font-size:14px;">🌤️ Afternoon</div>
+      <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px;">
+        {% csrf_token %}<input type="hidden" name="slot" value="afternoon">
+        {% if 'afternoon' in marked_slots %}
+          {% if marked_slots.afternoon %}<span class="badge badge-present">✅ Present</span>{% else %}<span class="badge badge-absent">❌ Absent</span>{% endif %}
+        {% else %}
+          <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">Present</button>
+          <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">Absent</button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:14px; font-weight:700; margin-bottom:14px; padding-left:12px; border-left:3px solid var(--primary-color);">📅 Day-by-Day Attendance</div>
+  <div class="table-wrapper">
+    {% if day_rows %}
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Day</th>
+          <th>Early</th>
+          <th>Morning</th>
+          <th>Afternoon</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in day_rows %}
+        <tr {% if row.is_today %}style="background:#F0F7FF;"{% endif %}>
+          <td style="font-weight:600;">
+            {{ row.date }}
+            {% if row.is_today %}<span style="font-size:10px;background:#1A73E8;color:white;border-radius:4px;padding:1px 5px;margin-left:6px;">TODAY</span>{% endif %}
+          </td>
+          <td><span class="badge badge-primary" style="font-weight:500; font-size:11px;">{{ row.day_name }}</span></td>
+          <td style="text-align:center;font-weight:700;font-size:16px;color:{{ row.early_color }};">{{ row.early }}</td>
+          <td style="text-align:center;font-weight:700;font-size:16px;color:{{ row.morning_color }};">{{ row.morning }}</td>
+          <td style="text-align:center;font-weight:700;font-size:16px;color:{{ row.afternoon_color }};">{{ row.afternoon }}</td>
+          <td><span class="badge {{ row.day_badge }}" style="min-width:64px; text-align:center;">{{ row.day_present }} / 3</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center; color:#5A6A85; padding:48px;">
+      No attendance records found yet.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

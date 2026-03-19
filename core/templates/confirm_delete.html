@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Delete - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div style="max-width:520px; margin:40px auto;">
+  <div class="card" style="text-align:center; padding:40px 32px;">
+    <div style="font-size:52px; margin-bottom:16px;">🗑️</div>
+    <h2 style="font-size:20px; margin:0 0 10px; color:var(--text-primary);">Delete {{ object_type }}</h2>
+    <p style="color:var(--text-secondary); font-size:14px; margin:0 0 8px;">
+      Are you sure you want to permanently delete:
+    </p>
+    <div style="background:#FFEBEE; border:1px solid #FFCDD2; border-radius:8px; padding:12px 20px; margin:16px 0; display:inline-block; font-weight:700; font-size:15px; color:#C62828;">
+      {{ object_name }}
+    </div>
+    <p style="color:var(--text-secondary); font-size:13px; margin:0 0 28px;">
+      This action <strong>cannot be undone.</strong>
+    </p>
+    <form method="post" style="display:flex; gap:12px; justify-content:center;">
+      {% csrf_token %}
+      <a href="{% url back_url %}" class="btn btn-secondary" style="padding:10px 24px;">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-danger" style="padding:10px 24px;">
+        🗑️ Delete {{ object_type }}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

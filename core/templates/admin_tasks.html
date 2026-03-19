@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Tasks - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>📋 Tasks</h2>
+    <p class="page-subtitle">All assigned tasks across all sites.</p>
+  </div>
+  <a href="{% url 'assign_task' %}" class="btn">＋ Assign Task</a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Worker</th><th>Site</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>
+            <strong>{{ task.title }}</strong>
+            {% if task.description %}<br><span style="font-size:12px; color:var(--text-secondary);">{{ task.description|truncatewords:12 }}</span>{% endif %}
+          </td>
+          <td>{{ task.worker.get_full_name|default:task.worker.username }}</td>
+          <td>{{ task.site.name }}</td>
+          <td style="font-size:13px; color:var(--text-secondary);">{{ task.created_at|date:"M d, Y" }}</td>
+          <td>
+            {% if task.is_completed %}
+              <span class="badge badge-done">✔ Done</span>
+            {% else %}
+              <span class="badge badge-pending">⏳ Pending</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'edit_task' task.id %}" class="btn btn-sm btn-secondary">✏️ Edit</a>
+            <a href="{% url 'delete_task' task.id %}" class="btn btn-sm btn-danger" style="margin-left:4px;">🗑️</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:var(--text-secondary); padding:32px;">
+            No tasks yet. <a href="{% url 'assign_task' %}" style="color:var(--primary-color);">Assign your first task →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Sites - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>🏗️ Sites</h2>
+    <p class="page-subtitle">All construction sites and their owner details.</p>
+  </div>
+  <a href="{% url 'add_site' %}" class="btn">＋ Add Site</a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Owner Name</th>
+          <th>Owner Phone</th>
+          <th>Address</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if sites %}
+        {% for site in sites %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              {% if site.site_photo %}
+              <img src="{{ site.site_photo.url }}" alt="{{ site.name }}"
+                style="width:40px; height:40px; object-fit:cover; border-radius:8px; flex-shrink:0;">
+              {% else %}
+              <div
+                style="width:40px; height:40px; background:#E3F2FD; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+                🏗️</div>
+              {% endif %}
+              {% if site.location %}
+              <a href="{{ site.location }}" target="_blank" style="color:#1A73E8;font-weight:600;">{{ site.name }}</a>
+              {% else %}
+              <strong>{{ site.name }}</strong>
+              {% endif %}
+            </div>
+          </td>
+          <td>{{ site.owner_name|default:"—" }}</td>
+          <td style="color:var(--text-secondary);">{{ site.owner_phone|default:"—" }}</td>
+          <td style="color:var(--text-secondary); font-size:13px;">{{ site.address|default:"—" }}</td>
+          <td>
+            {% if site.status == 'Completed' %}
+            <span class="badge badge-done">Completed</span>
+            {% elif site.status == 'In Progress' %}
+            <span class="badge badge-pending">In Progress</span>
+            {% else %}
+            <span class="badge badge-absent">Not Started</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'edit_site' site.id %}" class="btn btn-sm btn-secondary">✏️ Edit</a>
+            <a href="{% url 'delete_site' site.id %}" class="btn btn-sm btn-danger" style="margin-left:4px;">🗑️</a>
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:var(--text-secondary); padding:40px;">
+            No sites added yet. <a href="{% url 'add_site' %}" style="color:var(--primary-color);">Add your first site
+              →</a>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

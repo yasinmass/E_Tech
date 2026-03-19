@@ -1,0 +1,73 @@
+﻿Total lines: 199
+139|        {% for row in day_rows %}
+140|        <tr {% if row.is_today %}style="background:#EBF4FF;" {% endif %}>
+141|          <td style="color:var(--text-secondary); font-size:12px;">{{ row.idx }}</td>
+142|          <td style="font-weight:600;">
+143|            {{ row.date|date:"M d, Y" }}
+144|            {% if row.is_today %}<span style="font-size:10px;background:#1A73E8;color:white;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">TODAY</span>{% endif %}
+145|
+146|          <!-- Early -->
+147|          <td style="text-align:center;">
+148|            {% if row.early is True %}
+149|            <span style="color:#2E7D32; font-weight:700; font-size:15px;">P</span>
+150|            {% elif row.early is False %}
+151|            <span style="color:#C62828; font-weight:700; font-size:15px;">A</span>
+152|            {% else %}
+153|            <span style="color:#BDBDBD; font-size:16px;">ù</span>
+154|            {% endif %}
+155|          </td>
+156|
+157|          <!-- Morning -->
+158|          <td style="text-align:center;">
+159|            {% if row.morning is True %}
+160|            <span style="color:#2E7D32; font-weight:700; font-size:15px;">P</span>
+161|            {% elif row.morning is False %}
+162|            <span style="color:#C62828; font-weight:700; font-size:15px;">A</span>
+163|            {% else %}
+164|            <span style="color:#BDBDBD; font-size:16px;">ù</span>
+165|            {% endif %}
+166|          </td>
+167|
+168|          <!-- Afternoon -->
+169|          <td style="text-align:center;">
+170|            {% if row.afternoon is True %}
+171|            <span style="color:#2E7D32; font-weight:700; font-size:15px;">P</span>
+172|            {% elif row.afternoon is False %}
+173|            <span style="color:#C62828; font-weight:700; font-size:15px;">A</span>
+174|            {% else %}
+175|            <span style="color:#BDBDBD; font-size:16px;">ù</span>
+176|            {% endif %}
+177|          </td>
+178|
+179|          <!-- Day total -->
+180|          <td>
+181|            <span class="badge {{ row.day_badge }}">
+182|              {{ row.day_present }} / 3
+183|            </span>
+184|          </td>
+185|        </tr>
+186|        {% empty %}
+187|        <tr>
+188|          <td colspan="7" style="text-align:center; color:var(--text-secondary); padding:40px;">
+python : Traceback (most recent call last):
+At line:1 char:1
++ python verify.py 2>&1 | Out-File -Encoding utf8 
+verify_out.txt; Get-C ...
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Tracebac 
+   k (most recent call last)::String) [], RemoteExce  
+  ption
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\Yasin\OneDrive\Desktop\construction_a
+pp\verify.py", line 7, in <module>
+    print(f'{i+1}|{lines[i]}', end='')
+  File "C:\Users\Yasin\AppData\Local\Programs\Python\P
+ython311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,enc
+oding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode 
+character '\U0001f4cb' in position 64: character maps 
+to <undefined>

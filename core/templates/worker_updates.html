@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}My Work Updates - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>📸 My Work Updates</h2>
+    <p class="page-subtitle">Your submitted progress updates for all sites.</p>
+  </div>
+  <a href="{% url 'worker_upload_update' %}" class="btn">＋ Upload Update</a>
+</div>
+
+{% if updates %}
+<div class="grid-2">
+  {% for update in updates %}
+  <div class="update-card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+      <div style="font-size:13px; color:var(--primary-color); font-weight:600;">📍 {{ update.site.name }}</div>
+      <span style="font-size:12px; color:var(--text-secondary);">{{ update.created_at|date:"M d, Y" }}</span>
+    </div>
+    {% if update.text %}
+    <p style="font-size:13px; color:var(--text-secondary); margin:0 0 10px; line-height:1.5;">{{ update.text }}</p>
+    {% endif %}
+    {% if update.image %}
+    <img src="{{ update.image.url }}" alt="Work update image">
+    {% endif %}
+    {% if update.video %}
+    <video controls style="max-width:100%; border-radius:8px; margin-top:10px;">
+      <source src="{{ update.video.url }}" type="video/mp4">
+    </video>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center; padding:40px;">
+  <div style="font-size:48px; margin-bottom:12px;">📸</div>
+  <p style="color:var(--text-secondary);">You haven't uploaded any work updates yet.</p>
+  <a href="{% url 'worker_upload_update' %}" class="btn" style="margin-top:12px;">＋ Upload Your First Update</a>
+</div>
+{% endif %}
+
+{% endblock %}

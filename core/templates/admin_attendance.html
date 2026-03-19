@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% block title %}Attendance - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>🕒 Worker Attendance</h2>
+    <p class="page-subtitle">Click a worker card to view their full attendance breakdown.</p>
+  </div>
+  <a href="{% url 'admin_mark_attendance' %}" class="btn">✔ Mark Attendance</a>
+</div>
+
+<!-- ═══════════════ WORKER CARDS VIEW ═══════════════ -->
+<div id="workerCardsView">
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:16px;">
+    {% for wd in worker_data %}
+    <div class="card" onclick="showWorkerDetail('detail-{{ wd.worker.id }}')"
+      style="cursor:pointer; padding:24px; transition:transform 0.2s, box-shadow 0.2s; position:relative; overflow:hidden;">
+      <!-- Hover lift effect via inline -->
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+        <!-- Progress Ring -->
+        <div style="position:relative; width:64px; height:64px; flex-shrink:0;">
+          <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform:rotate(-90deg);">
+            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+              stroke="#E3F2FD" stroke-width="3" />
+            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+              stroke="{% if wd.pct >= 75 %}#2E7D32{% elif wd.pct >= 50 %}#F57C00{% else %}#E53935{% endif %}"
+              stroke-width="3" stroke-dasharray="{{ wd.pct }}, 100" stroke-linecap="round" />
+          </svg>
+          <div
+            style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:13px; font-weight:700; color:{% if wd.pct >= 75 %}#2E7D32{% elif wd.pct >= 50 %}#F57C00{% else %}#E53935{% endif %};">
+            {{ wd.pct }}%
+          </div>
+        </div>
+        <!-- Name / Info -->
+        <div style="flex:1; min-width:0;">
+          <div
+            style="font-size:16px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            {{ wd.worker.get_full_name|default:wd.worker.username }}
+          </div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+            <span class="code-pill">{{ wd.worker.username }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1; background:#E8F5E9; border-radius:8px; padding:8px 10px; text-align:center;">
+          <div style="font-size:18px; font-weight:700; color:#2E7D32;">{{ wd.present }}</div>
+          <div style="font-size:10px; font-weight:600; color:#2E7D32; text-transform:uppercase;">Present</div>
+        </div>
+        <div style="flex:1; background:#FFEBEE; border-radius:8px; padding:8px 10px; text-align:center;">
+          <div style="font-size:18px; font-weight:700; color:#C62828;">{{ wd.absent }}</div>
+          <div style="font-size:10px; font-weight:600; color:#C62828; text-transform:uppercase;">Absent</div>
+        </div>
+        <div style="flex:1; background:#E3F2FD; border-radius:8px; padding:8px 10px; text-align:center;">
+          <div style="font-size:18px; font-weight:700; color:#1565C0;">{{ wd.total }}</div>
+          <div style="font-size:10px; font-weight:600; color:#1565C0; text-transform:uppercase;">Slots</div>
+        </div>
+      </div>
+
+      <!-- Clickable indicator -->
+      <div style="text-align:center; margin-top:14px; font-size:12px; color:var(--primary-color); font-weight:600;">
+        View Details →
+      </div>
+    </div>
+    {% empty %}
+    <div class="card" style="padding:40px; text-align:center; grid-column:1/-1;">
+      <div style="font-size:36px; margin-bottom:10px;">📋</div>
+      <div style="font-size:15px; color:var(--text-secondary);">No workers found. <a href="{% url 'add_worker' %}"
+          style="color:var(--primary-color);">Add a worker first →</a></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ═══════════════ WORKER DETAIL VIEWS (hidden by default) ═══════════════ -->
+{% for wd in worker_data %}
+<div id="detail-{{ wd.worker.id }}" style="display:none;">
+  <!-- Back Button -->
+  <button onclick="hideWorkerDetail('detail-{{ wd.worker.id }}')" class="btn btn-secondary"
+    style="margin-bottom:20px; gap:6px;">
+    ← Back to Workers
+  </button>
+
+  <!-- Worker Name Header -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <div
+      style="width:44px; height:44px; background:linear-gradient(135deg,#1A73E8,#1558B0); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:white; font-weight:700; flex-shrink:0;">
+      {{ wd.worker.first_name|first|upper|default:wd.worker.username|first|upper }}
+    </div>
+    <div>
+      <div style="font-size:20px; font-weight:700;">{{ wd.worker.get_full_name|default:wd.worker.username }}</div>
+      <div style="font-size:13px; color:var(--text-secondary);">Attendance Breakdown</div>
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="grid-stats" style="grid-template-columns:repeat(4,1fr); margin-bottom:24px;">
+    <div class="stat-card" style="border-left:4px solid #2E7D32;">
+      <div style="font-size:11px; font-weight:700; color:#2E7D32; text-transform:uppercase; letter-spacing:0.5px;">
+        Present Slots</div>
+      <div style="font-size:28px; font-weight:700; color:#2E7D32; margin-top:6px;">{{ wd.present }}</div>
+    </div>
+    <div class="stat-card" style="border-left:4px solid #C62828;">
+      <div style="font-size:11px; font-weight:700; color:#C62828; text-transform:uppercase; letter-spacing:0.5px;">
+        Absent Slots</div>
+      <div style="font-size:28px; font-weight:700; color:#C62828; margin-top:6px;">{{ wd.absent }}</div>
+    </div>
+    <div class="stat-card" style="border-left:4px solid #1565C0;">
+      <div style="font-size:11px; font-weight:700; color:#1565C0; text-transform:uppercase; letter-spacing:0.5px;">Total
+        Slots</div>
+      <div style="font-size:28px; font-weight:700; color:#1565C0; margin-top:6px;">{{ wd.total }}</div>
+    </div>
+    <div class="stat-card" style="border-left:4px solid #F57C00;">
+      <div style="font-size:11px; font-weight:700; color:#F57C00; text-transform:uppercase; letter-spacing:0.5px;">
+        Attendance %</div>
+      <div style="font-size:28px; font-weight:700; color:#F57C00; margin-top:6px;">{{ wd.pct }}%</div>
+    </div>
+  </div>
+
+  <!-- Date-wise Table -->
+  <div class="card">
+    <div
+      style="font-size:14px; font-weight:700; margin-bottom:14px; padding-left:12px; border-left:3px solid var(--primary-color);">
+      📅 Day-by-Day Attendance
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Day</th>
+            <th>Early (5–8 AM)</th>
+            <th>Morning (9 AM–1 PM)</th>
+            <th>Afternoon (1–6 PM)</th>
+            <th>Slots Present</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in wd.rows %}
+          <tr>
+            <td style="color:var(--text-secondary); font-size:12px;">{{ row.idx }}</td>
+            <td style="font-weight:600;">{{ row.date|date:"M d, Y" }}</td>
+            <td><span class="badge badge-primary">{{ row.day }}</span></td>
+            <td>
+              {% if row.early is True %}
+              <span style="color:#2E7D32; font-weight:700;">P</span>
+              {% elif row.early is False %}
+              <span style="color:#C62828; font-weight:700;">A</span>
+              {% else %}
+              <span style="color:#9E9E9E;">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.morning is True %}
+              <span style="color:#2E7D32; font-weight:700;">P</span>
+              {% elif row.morning is False %}
+              <span style="color:#C62828; font-weight:700;">A</span>
+              {% else %}
+              <span style="color:#9E9E9E;">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.afternoon is True %}
+              <span style="color:#2E7D32; font-weight:700;">P</span>
+              {% elif row.afternoon is False %}
+              <span style="color:#C62828; font-weight:700;">A</span>
+              {% else %}
+              <span style="color:#9E9E9E;">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span
+                class="badge {% if row.day_present == 3 %}badge-done{% elif row.day_present >= 1 %}badge-pending{% else %}badge-absent{% endif %}">
+                {{ row.day_present }} / 3
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center; color:var(--text-secondary); padding:32px;">
+              No attendance records found for this worker.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+  function showWorkerDetail(id) {
+    document.getElementById('workerCardsView').style.display = 'none';
+    document.getElementById(id).style.display = 'block';
+  }
+  function hideWorkerDetail(id) {
+    document.getElementById(id).style.display = 'none';
+    document.getElementById('workerCardsView').style.display = 'block';
+  }
+</script>
+
+<style>
+  /* Card hover lift */
+  #workerCardsView .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(26, 115, 232, 0.16);
+  }
+</style>
+
+{% endblock %}

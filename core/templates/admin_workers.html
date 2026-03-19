@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% block title %}Workers - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>👷 Workers Management</h2>
+    <p class="page-subtitle">Manage your construction workforce and mark daily attendance.</p>
+  </div>
+  <a href="{% url 'add_worker' %}" class="btn">＋ Add Worker</a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table style="min-width:750px;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Phone</th>
+          <th>Attendance Stats</th>
+          <th>Sites</th>
+          <th>Mark</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in workers %}
+        <tr class="worker-row" style="cursor:pointer;"
+            data-id="{{ w.id }}"
+            data-name="{{ w.get_full_name|default:w.username }}"
+            data-username="{{ w.username }}"
+            data-phone="{{ w.phone|default:'—' }}"
+            data-sites="{{ w.assigned_sites.count }}"
+            data-present="{{ w.present_days }}"
+            data-absent="{{ w.absent_days }}"
+            data-pct="{{ w.pct }}"
+            data-tot="{{ w.total_slots }}"
+            data-rem="{{ w.remaining_slots }}"
+            data-early="{{ w.today_early }}"
+            data-morning="{{ w.today_morning }}"
+            data-afternoon="{{ w.today_afternoon }}"
+            onclick="openWorkerModal(this)">
+          <td style="display:flex; align-items:center;">
+            {% if w.worker_profile.photo %}
+              <img src="{{ w.worker_profile.photo.url }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">
+            {% else %}
+              <div style="width:40px;height:40px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-weight:600;color:#1A73E8;font-size:14px;margin-right:10px;">
+                {{ w.get_full_name|default:w.username|first|upper }}
+              </div>
+            {% endif %}
+            <a href="{% url 'worker_detail' w.id %}" onclick="event.stopPropagation()" style="color:var(--text-primary); text-decoration:none;"><strong>{{ w.get_full_name|default:w.username }}</strong></a>
+          </td>
+          <td><span class="code-pill">{{ w.username }}</span></td>
+          <td style="color:var(--text-secondary);">{{ w.phone|default:"—" }}</td>
+          <td>
+            <span class="badge badge-present">{{ w.present_days }} Full Days</span>&nbsp;
+            <span class="badge badge-absent">{{ w.absent_days }} Absent</span>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Slots: {{ w.total_slots }} | Carry: {{ w.remaining_slots }}</div>
+          </td>
+          <td><span class="badge badge-inprogress">{{ w.assigned_sites.count }} site(s)</span></td>
+          <td>
+            <button class="btn btn-sm" onclick="event.stopPropagation(); openWorkerModal(this.closest('tr'))">
+              🎯 Mark Attendance
+            </button>
+          </td>
+          <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+            <a href="{% url 'worker_detail' w.id %}" class="btn btn-sm" style="background:#E3F2FD; color:#1A73E8; margin-right:4px;" onclick="event.stopPropagation()">👁️ View</a>
+            <a href="{% url 'edit_worker' w.id %}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation()">✏️ Edit</a>
+            <a href="{% url 'delete_worker' w.id %}" class="btn btn-sm btn-danger" onclick="event.stopPropagation()" style="margin-left:4px;">🗑️</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; color:var(--text-secondary); padding:32px;">No workers added yet. <a href="{% url 'add_worker' %}" style="color:var(--primary-color);">Add one now →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Worker Modal Overlay -->
+<div id="workerModalOverlay" class="modal-overlay" style="display:none;">
+  <div id="workerModal" class="modal-box">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div>
+        <h3 id="modalName" style="margin:0 0 4px; font-size:18px;">Worker Name</h3>
+        <p style="margin:0; color:var(--text-secondary); font-size:13px;">
+          <span class="code-pill" id="modalUsername">username</span>&nbsp;
+          📞 <span id="modalPhone"></span> &nbsp;|&nbsp; 🏗️ <span id="modalSites"></span> site(s)
+        </p>
+      </div>
+      <button onclick="closeWorkerModal()" class="modal-close-btn">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Stats Row -->
+      <div style="display:flex; gap:0; background:#F0F7FF; border-radius:10px; border:1px solid #DDEEFF; overflow:hidden; margin-bottom:20px;">
+        <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
+          <div id="modalPct" style="font-size:20px; font-weight:700; color:var(--primary-color);">0%</div>
+          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Rate</div>
+        </div>
+        <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
+          <div id="modalPresent" style="font-size:20px; font-weight:700; color:#2E7D32;">0</div>
+          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Full Days</div>
+        </div>
+        <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
+          <div id="modalAbsent" style="font-size:20px; font-weight:700; color:#E53935;">0</div>
+          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Absent</div>
+        </div>
+        <div style="flex:1; text-align:center; padding:14px 8px;">
+          <div id="modalSlots" style="font-size:20px; font-weight:700; color:#F57C00;">0</div>
+          <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Total Slots</div>
+        </div>
+      </div>
+
+      <!-- Mark Attendance -->
+      <div style="margin-bottom:4px; font-size:14px; font-weight:600; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+        <span>🎯 Mark Today's Attendance</span>
+        <span style="color:var(--text-secondary); font-size:12px; font-weight:400;">{{ today|date:"l, M d" }}</span>
+      </div>
+      <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+
+        <input type="hidden" id="modalWorkerId">
+
+        <!-- Early Slot -->
+        <div class="slot-card">
+          <div>
+            <div style="font-weight:600; color:#F57C00;">🌅 Early Morning</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">5 AM – 8 AM (Extra)</div>
+          </div>
+          <div id="slot-btn-early" style="display:flex; gap:6px;">
+            <button onclick="setSlot('early', true)" class="btn btn-sm early-true" style="background:#E8F5E9; color:#2E7D32; border:1px solid #C8E6C9;">✔ Present</button>
+            <button onclick="setSlot('early', false)" class="btn btn-sm early-false" style="background:#FFEBEE; color:#C62828; border:1px solid #FFCDD2;">✘ Absent</button>
+          </div>
+          <div id="slot-locked-early" style="display:none;" class="badge">🔒 Marked</div>
+        </div>
+
+        <!-- Morning Slot -->
+        <div class="slot-card">
+          <div>
+            <div style="font-weight:600;">☀️ Morning</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">9 AM – 1 PM</div>
+          </div>
+          <div id="slot-btn-morning" style="display:flex; gap:6px;">
+            <button onclick="setSlot('morning', true)" class="btn btn-sm morning-true" style="background:#E8F5E9; color:#2E7D32; border:1px solid #C8E6C9;">✔ Present</button>
+            <button onclick="setSlot('morning', false)" class="btn btn-sm morning-false" style="background:#FFEBEE; color:#C62828; border:1px solid #FFCDD2;">✘ Absent</button>
+          </div>
+          <div id="slot-locked-morning" style="display:none;" class="badge">🔒 Marked</div>
+        </div>
+
+        <!-- Afternoon Slot -->
+        <div class="slot-card">
+          <div>
+            <div style="font-weight:600;">🌤️ Afternoon</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">1 PM – 6 PM</div>
+          </div>
+          <div id="slot-btn-afternoon" style="display:flex; gap:6px;">
+            <button onclick="setSlot('afternoon', true)" class="btn btn-sm afternoon-true" style="background:#E8F5E9; color:#2E7D32; border:1px solid #C8E6C9;">✔ Present</button>
+            <button onclick="setSlot('afternoon', false)" class="btn btn-sm afternoon-false" style="background:#FFEBEE; color:#C62828; border:1px solid #FFCDD2;">✘ Absent</button>
+          </div>
+          <div id="slot-locked-afternoon" style="display:none;" class="badge">🔒 Marked</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button onclick="closeWorkerModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveAttendance()" id="saveAttBtn" class="btn" style="min-width:140px;">💾 Save Attendance</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast">✅ Attendance saved successfully!</div>
+
+<script>
+  let currentSelections = { early: null, morning: null, afternoon: null };
+
+  function openWorkerModal(row) {
+    const data = row.dataset;
+    document.getElementById('modalWorkerId').value = data.id;
+    document.getElementById('modalName').textContent = data.name;
+    document.getElementById('modalUsername').textContent = data.username;
+    document.getElementById('modalPhone').textContent = data.phone;
+    document.getElementById('modalSites').textContent = data.sites;
+    document.getElementById('modalPct').textContent = data.pct + '%';
+    document.getElementById('modalPresent').textContent = data.present;
+    document.getElementById('modalAbsent').textContent = data.absent;
+    document.getElementById('modalSlots').textContent = data.tot + ' (carry: ' + data.rem + ')';
+
+    currentSelections = { early: null, morning: null, afternoon: null };
+    resetSlotBtns();
+
+    setupSlotUI('early', data.early);
+    setupSlotUI('morning', data.morning);
+    setupSlotUI('afternoon', data.afternoon);
+
+    const overlay = document.getElementById('workerModalOverlay');
+    const modal = document.getElementById('workerModal');
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      modal.style.transform = 'scale(1)';
+    }, 10);
+  }
+
+  function resetSlotBtns() {
+    ['early-true', 'early-false', 'morning-true', 'morning-false', 'afternoon-true', 'afternoon-false'].forEach(cls => {
+      const btns = document.querySelectorAll('.' + cls);
+      btns.forEach(b => b.style.boxShadow = 'none');
+    });
+  }
+
+  function setupSlotUI(slotName, dbStatus) {
+    const btnBox = document.getElementById(`slot-btn-${slotName}`);
+    const lockedBox = document.getElementById(`slot-locked-${slotName}`);
+    if (dbStatus === "true" || dbStatus === "false") {
+      btnBox.style.display = 'none';
+      lockedBox.style.display = 'inline-flex';
+      lockedBox.innerHTML = dbStatus === "true" ? '✅ Present (Logged)' : '❌ Absent (Logged)';
+      lockedBox.className = 'badge ' + (dbStatus === "true" ? 'badge-present' : 'badge-absent');
+    } else {
+      btnBox.style.display = 'flex';
+      lockedBox.style.display = 'none';
+    }
+  }
+
+  function setSlot(slot, isPresent) {
+    currentSelections[slot] = isPresent;
+    const trueBtn = document.querySelector(`.${slot}-true`);
+    const falseBtn = document.querySelector(`.${slot}-false`);
+    trueBtn.style.boxShadow = isPresent ? '0 0 0 3px rgba(46,125,50,0.35)' : 'none';
+    falseBtn.style.boxShadow = !isPresent ? '0 0 0 3px rgba(198,40,40,0.35)' : 'none';
+  }
+
+  function closeWorkerModal() {
+    const overlay = document.getElementById('workerModalOverlay');
+    const modal = document.getElementById('workerModal');
+    overlay.style.opacity = '0';
+    modal.style.transform = 'scale(0.95)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 220);
+  }
+
+  async function saveAttendance() {
+    const workerId = document.getElementById('modalWorkerId').value;
+    if (currentSelections.early === null && currentSelections.morning === null && currentSelections.afternoon === null) {
+      closeWorkerModal();
+      return;
+    }
+    const btn = document.getElementById('saveAttBtn');
+    btn.innerHTML = '⏳ Saving...';
+    btn.disabled = true;
+    try {
+      const response = await fetch("{% url 'admin_mark_worker_ajax' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
+        body: JSON.stringify({ worker_id: workerId, slots: currentSelections })
+      });
+      if (response.ok) {
+        closeWorkerModal();
+        showToast();
+        setTimeout(() => window.location.reload(), 1300);
+      } else {
+        alert("Failed to save attendance.");
+      }
+    } catch(err) {
+      alert("Network error.");
+    } finally {
+      btn.innerHTML = '💾 Save Attendance';
+      btn.disabled = false;
+    }
+  }
+
+  function showToast() {
+    const toast = document.getElementById('toast');
+    toast.style.transform = 'translateY(0)';
+    toast.style.opacity = '1';
+    setTimeout(() => {
+      toast.style.transform = 'translateY(80px)';
+      toast.style.opacity = '0';
+    }, 3000);
+  }
+
+  document.getElementById('workerModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeWorkerModal();
+  });
+</script>
+
+{% endblock %}

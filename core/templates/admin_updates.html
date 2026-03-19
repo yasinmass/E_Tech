@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Work Updates - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>📸 Work Updates</h2>
+    <p class="page-subtitle">All site progress updates submitted by workers.</p>
+  </div>
+</div>
+
+{% if updates %}
+<div class="grid-2">
+  {% for update in updates %}
+  <div class="update-card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700; font-size:14px; color:var(--text-primary);">
+          {{ update.worker.get_full_name|default:update.worker.username }}
+        </div>
+        <div style="font-size:12px; color:var(--primary-color); font-weight:600; margin-top:2px;">📍 {{ update.site.name }}</div>
+      </div>
+      <span style="font-size:12px; color:var(--text-secondary); white-space:nowrap; margin-left:8px;">{{ update.created_at|date:"M d, Y" }}</span>
+    </div>
+    {% if update.text %}
+    <p style="font-size:13px; color:var(--text-secondary); margin:0 0 10px; line-height:1.5;">{{ update.text }}</p>
+    {% endif %}
+    {% if update.image %}
+    <img src="{{ update.image.url }}" alt="Work update image">
+    {% endif %}
+    {% if update.video %}
+    <video controls style="max-width:100%; border-radius:8px; margin-top:10px;">
+      <source src="{{ update.video.url }}" type="video/mp4">
+    </video>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center; padding:40px;">
+  <div style="font-size:48px; margin-bottom:12px;">📸</div>
+  <p style="color:var(--text-secondary);">No work updates submitted yet.</p>
+</div>
+{% endif %}
+
+{% endblock %}

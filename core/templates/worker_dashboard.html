@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Worker Dashboard - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>My Dashboard 👷</h2>
+    <p class="page-subtitle">{{ today|date:"l, F j, Y" }}</p>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <a href="{% url 'worker_upload_update' %}" class="btn">📸 Upload Update</a>
+    <a href="{% url 'worker_upload_bill' %}" class="btn btn-warning">🧾 Upload Bill</a>
+  </div>
+</div>
+
+<!-- Attendance Summary Stats -->
+<div class="grid-stats" style="margin-bottom:20px;">
+  <div class="stat-card">
+    <span class="stat-icon">✅</span>
+    <div class="stat-number" style="color:#2E7D32;">{{ present_days }}</div>
+    <div class="stat-label">Present Days</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">❌</span>
+    <div class="stat-number" style="color:#E53935;">{{ absent_days }}</div>
+    <div class="stat-label">Absent Days</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">📊</span>
+    <div class="stat-number">{{ attendance_percentage }}%</div>
+    <div class="stat-label">Attendance Rate</div>
+  </div>
+</div>
+
+<!-- Today's Attendance Slots -->
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">⏱️ Mark Today's Slots</span>
+    <span style="font-size:13px; color:var(--text-secondary);">{{ today|date:"M d, Y" }}</span>
+  </div>
+
+  <!-- Early Morning -->
+  <div class="slot-card">
+    <div>
+      <div style="font-weight:600; color:#F57C00;">🌅 Early Morning</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">5 AM – 8 AM (Extra Duty)</div>
+    </div>
+    <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px; align-items:center;">
+      {% csrf_token %}
+      <input type="hidden" name="slot" value="early">
+      {% if 'early' in marked_slots %}
+        {% if marked_slots.early %}
+          <span class="badge badge-present">✅ Present (Logged)</span>
+        {% else %}
+          <span class="badge badge-absent">❌ Absent (Logged)</span>
+        {% endif %}
+      {% else %}
+        <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">✔ Present</button>
+        <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">✘ Absent</button>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Morning -->
+  <div class="slot-card">
+    <div>
+      <div style="font-weight:600;">☀️ Morning</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">9 AM – 1 PM</div>
+    </div>
+    <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px; align-items:center;">
+      {% csrf_token %}
+      <input type="hidden" name="slot" value="morning">
+      {% if 'morning' in marked_slots %}
+        {% if marked_slots.morning %}
+          <span class="badge badge-present">✅ Present (Logged)</span>
+        {% else %}
+          <span class="badge badge-absent">❌ Absent (Logged)</span>
+        {% endif %}
+      {% else %}
+        <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">✔ Present</button>
+        <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">✘ Absent</button>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Afternoon -->
+  <div class="slot-card">
+    <div>
+      <div style="font-weight:600;">🌤️ Afternoon</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">1 PM – 6 PM</div>
+    </div>
+    <form method="post" action="{% url 'worker_mark_attendance' %}" style="margin:0; display:flex; gap:6px; align-items:center;">
+      {% csrf_token %}
+      <input type="hidden" name="slot" value="afternoon">
+      {% if 'afternoon' in marked_slots %}
+        {% if marked_slots.afternoon %}
+          <span class="badge badge-present">✅ Present (Logged)</span>
+        {% else %}
+          <span class="badge badge-absent">❌ Absent (Logged)</span>
+        {% endif %}
+      {% else %}
+        <button type="submit" name="is_present" value="true" class="btn btn-success btn-sm">✔ Present</button>
+        <button type="submit" name="is_present" value="false" class="btn btn-danger btn-sm">✘ Absent</button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% endblock %}

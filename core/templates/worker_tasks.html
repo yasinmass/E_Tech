@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}My Tasks - E-Tech Builders{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>📋 My Tasks</h2>
+    <p class="page-subtitle">Tasks assigned to you by the admin.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Site</th><th>Date</th><th>Status</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>
+            <strong>{{ task.title }}</strong>
+            {% if task.description %}<br><span style="font-size:12px; color:var(--text-secondary);">{{ task.description|truncatewords:10 }}</span>{% endif %}
+          </td>
+          <td>{{ task.site.name }}</td>
+          <td style="font-size:13px; color:var(--text-secondary);">{{ task.created_at|date:"M d, Y" }}</td>
+          <td>
+            {% if task.is_completed %}
+              <span class="badge badge-done">✔ Completed</span>
+            {% else %}
+              <span class="badge badge-pending">⏳ Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if not task.is_completed %}
+            <form method="post" action="{% url 'worker_mark_task_complete' task.id %}" style="margin:0;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-success btn-sm">Mark Complete</button>
+            </form>
+            {% else %}
+            <span style="color:var(--text-secondary); font-size:13px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--text-secondary); padding:32px;">
+            No tasks assigned to you yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

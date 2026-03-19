@@ -1,0 +1,760 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import HttpResponseForbidden, JsonResponse
+import json
+from datetime import date
+from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile
+from .forms import (
+    AddWorkerForm, CustomerCreationForm, WorkerEditForm,
+    SiteForm, SiteEditForm, TaskForm, AttendanceForm, WorkUpdateForm, BillForm,
+    ProfileSettingsForm,
+)
+
+# ---------- Role helpers ----------
+def role_required(role):
+    def decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect('login')
+            if request.user.role != role:
+                return HttpResponseForbidden("Access denied.")
+            return view_func(request, *args, **kwargs)
+        wrapper.__name__ = view_func.__name__
+        return wrapper
+    return decorator
+
+# ---------- Auth Views ----------
+def login_view(request):
+    if request.user.is_authenticated:
+        return _redirect_by_role(request.user)
+
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return _redirect_by_role(user)
+        else:
+            return render(request, 'login.html', {'error': 'Invalid username or password.'})
+    return render(request, 'login.html')
+
+def _redirect_by_role(user):
+    if user.role == 'admin':
+        return redirect('admin_dashboard')
+    elif user.role == 'worker':
+        return redirect('worker_dashboard')
+    elif user.role == 'customer':
+        return redirect('customer_dashboard')
+    return redirect('login')
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+# ---------- Admin Views ----------
+@role_required('admin')
+def admin_dashboard(request):
+    workers = User.objects.filter(role='worker')
+    sites = Site.objects.prefetch_related('workers').all()
+    tasks = Task.objects.select_related('worker', 'site').order_by('-created_at')
+    updates = WorkUpdate.objects.select_related('worker', 'site').order_by('-created_at')
+    bills = Bill.objects.select_related('site', 'uploaded_by').order_by('-date')
+    attendances = Attendance.objects.select_related('worker').order_by('-date')
+    customers = User.objects.filter(role='customer')
+
+    # Add attendance calculations to each worker
+    for worker in workers:
+        total_slots = Attendance.objects.filter(worker=worker, is_present=True).count()
+        present_days = total_slots // 2
+        
+        unique_dates = Attendance.objects.filter(worker=worker).values('date').distinct().count()
+        absent_days = unique_dates - present_days
+        if absent_days < 0:
+            absent_days = 0
+            
+        worker.total_slots = total_slots
+        worker.present_days = present_days
+        worker.remaining_slots = total_slots % 2
+        worker.absent_days = absent_days
+
+    context = {
+        'workers': workers,
+        'sites': sites,
+        'tasks': tasks,
+        'updates': updates,
+        'bills': bills,
+        'attendances': attendances,
+        'customers': customers,
+        'today': date.today(),
+    }
+    return render(request, 'admin_dashboard.html', context)
+
+@role_required('admin')
+def add_worker(request):
+    if request.method == 'POST':
+        form = AddWorkerForm(request.POST, request.FILES)
+        if form.is_valid():
+            user = User.objects.create_user(
+                username=form.cleaned_data['login_username'],
+                password=form.cleaned_data['login_password'],
+                role='worker',
+            )
+            full_name = form.cleaned_data['full_name']
+            name_parts = full_name.strip().split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            user.phone = form.cleaned_data['phone']
+            user.save()
+
+            WorkerProfile.objects.create(
+                user=user,
+                age=form.cleaned_data['age'],
+                phone=form.cleaned_data['phone'],
+                family_phone=form.cleaned_data['family_phone'],
+                address=form.cleaned_data['address'],
+                id_proof=form.cleaned_data.get('id_proof'),
+                photo=form.cleaned_data.get('photo'),
+            )
+            return redirect('admin_workers')
+    else:
+        form = AddWorkerForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Add Worker'})
+
+@role_required('admin')
+def add_site(request):
+    if request.method == 'POST':
+        form = SiteForm(request.POST, request.FILES)
+        if form.is_valid():
+            site = form.save(commit=False)
+            username = form.cleaned_data['owner_username']
+            password = form.cleaned_data['owner_password']
+            owner_name = form.cleaned_data.get('owner_name', '')
+            owner_phone = form.cleaned_data.get('owner_phone', '')
+            # Split owner_name into first/last
+            name_parts = owner_name.strip().split(' ', 1)
+            first = name_parts[0] if name_parts else ''
+            last = name_parts[1] if len(name_parts) > 1 else ''
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                role='customer',
+                first_name=first,
+                last_name=last,
+                phone=owner_phone,
+            )
+            site.customer = user
+            site.status = 'In Progress'
+            site.save()
+            messages.success(request, f'Site "{site.name}" added and owner login created.')
+            return redirect('admin_sites')
+    else:
+        form = SiteForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Add Site', 'back_url': 'admin_sites'})
+
+@role_required('admin')
+def assign_task(request):
+    if request.method == "POST":
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_dashboard')
+    else:
+        form = TaskForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Assign Task', 'back_url': 'admin_dashboard'})
+
+@role_required('admin')
+def admin_mark_attendance(request):
+    if request.method == "POST":
+        form = AttendanceForm(request.POST)
+        if form.is_valid():
+            att = form.save(commit=False)
+            # Prevent duplicate attendance for same worker+day+slot
+            existing = Attendance.objects.filter(worker=att.worker, date=date.today(), slot=att.slot).first()
+            if existing:
+                existing.is_present = att.is_present
+                existing.save()
+            else:
+                att.save()
+            return redirect('admin_dashboard')
+    else:
+        form = AttendanceForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Mark Attendance', 'back_url': 'admin_dashboard'})
+
+@role_required('admin')
+def upload_bill(request):
+    if request.method == "POST":
+        form = BillForm(request.POST, request.FILES)
+        if form.is_valid():
+            bill = form.save(commit=False)
+            bill.uploaded_by = request.user
+            bill.save()
+            return redirect('admin_dashboard')
+    else:
+        form = BillForm()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Upload Bill', 'back_url': 'admin_dashboard'})
+
+# ---------- Worker Views ----------
+@role_required('worker')
+def worker_dashboard(request):
+    attendances_today = Attendance.objects.filter(worker=request.user, date=date.today())
+    marked_slots = {att.slot: att.is_present for att in attendances_today}
+    
+    # Calculate summary
+    # Present Days = total_slots // 2
+    # Absent Days = total working days - present days (we can find total working days by counting unique dates)
+    all_atts = Attendance.objects.filter(worker=request.user)
+    total_slots = all_atts.filter(is_present=True).count()
+    present_days = total_slots // 2
+    
+    unique_dates = all_atts.values('date').distinct().count()
+    absent_days = unique_dates - present_days
+    if absent_days < 0:
+        absent_days = 0 
+    
+    attendance_percentage = 0
+    if unique_dates > 0:
+        attendance_percentage = int((present_days / (present_days + absent_days)) * 100) if (present_days + absent_days) > 0 else 0
+
+    tasks = Task.objects.filter(worker=request.user).select_related('site').order_by('-created_at')
+    sites = request.user.assigned_sites.all()
+    updates = WorkUpdate.objects.filter(worker=request.user).order_by('-created_at')[:10]
+    history = all_atts.order_by('-date')[:30]
+    bills = Bill.objects.filter(uploaded_by=request.user).order_by('-date')[:10]
+    context = {
+        'marked_slots': marked_slots,
+        'present_days': present_days,
+        'absent_days': absent_days,
+        'attendance_percentage': attendance_percentage,
+        'tasks': tasks,
+        'sites': sites,
+        'updates': updates,
+        'history': history,
+        'bills': bills,
+        'today': date.today(),
+    }
+    return render(request, 'worker_dashboard.html', context)
+
+@role_required('worker')
+def worker_mark_attendance(request):
+    if request.method == "POST":
+        slot = request.POST.get('slot')
+        is_present = request.POST.get('is_present') == 'true'
+        existing = Attendance.objects.filter(worker=request.user, date=date.today(), slot=slot).first()
+        if existing:
+            # Feature 3: Block re-submission — attendance already marked for this slot today
+            slot_label = dict(Attendance.SLOT_CHOICES).get(slot, slot)
+            messages.error(request, f'Attendance for "{slot_label}" has already been marked for today.')
+        else:
+            Attendance.objects.create(worker=request.user, slot=slot, is_present=is_present)
+    return redirect('worker_dashboard')
+
+@role_required('worker')
+def worker_mark_task_complete(request, task_id):
+    if request.method == "POST":
+        task = get_object_or_404(Task, id=task_id, worker=request.user)
+        task.is_completed = True
+        task.save()
+    return redirect('worker_dashboard')
+
+
+@role_required('worker')
+def worker_upload_update(request):
+    if request.method == "POST":
+        form = WorkUpdateForm(request.POST, request.FILES)
+        if form.is_valid():
+            update = form.save(commit=False)
+            update.worker = request.user
+            update.save()
+            return redirect('worker_dashboard')
+    else:
+        form = WorkUpdateForm()
+        form.fields['site'].queryset = request.user.assigned_sites.all()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Upload Work Update', 'back_url': 'worker_dashboard'})
+
+@role_required('worker')
+def worker_upload_bill(request):
+    if request.method == "POST":
+        form = BillForm(request.POST, request.FILES)
+        if form.is_valid():
+            bill = form.save(commit=False)
+            bill.uploaded_by = request.user
+            bill.save()
+            return redirect('worker_dashboard')
+    else:
+        form = BillForm()
+        form.fields['site'].queryset = request.user.assigned_sites.all()
+    return render(request, 'form_template.html', {'form': form, 'title': 'Upload Bill', 'back_url': 'worker_dashboard'})
+
+# ---------- Customer Views ----------
+@role_required('customer')
+def customer_dashboard(request):
+    sites = Site.objects.filter(customer=request.user).prefetch_related('workers')
+    updates = WorkUpdate.objects.filter(site__in=sites).select_related('worker', 'site').order_by('-created_at')
+    bills = Bill.objects.filter(site__in=sites).select_related('site').order_by('-date')
+    context = {'sites': sites, 'updates': updates, 'bills': bills}
+    return render(request, 'customer_dashboard.html', context)
+
+
+@role_required('admin')
+def admin_workers(request):
+    workers = User.objects.filter(role='worker')
+    for worker in workers:
+        tot = Attendance.objects.filter(worker=worker, is_present=True).count()
+        worker.present_days = tot // 2
+        worker.remaining_slots = tot % 2
+        uq = Attendance.objects.filter(worker=worker).values('date').distinct().count()
+        worker.absent_days = max(uq - worker.present_days, 0)
+        worker.total_slots = tot
+        worker.pct = int((worker.present_days / (worker.present_days + worker.absent_days)) * 100) if (worker.present_days + worker.absent_days) > 0 else 0
+        
+        today_att = Attendance.objects.filter(worker=worker, date=date.today())
+        worker.today_early = "true" if today_att.filter(slot='early', is_present=True).exists() else "false" if today_att.filter(slot='early', is_present=False).exists() else "none"
+        worker.today_morning = "true" if today_att.filter(slot='morning', is_present=True).exists() else "false" if today_att.filter(slot='morning', is_present=False).exists() else "none"
+        worker.today_afternoon = "true" if today_att.filter(slot='afternoon', is_present=True).exists() else "false" if today_att.filter(slot='afternoon', is_present=False).exists() else "none"
+
+    return render(request, 'admin_workers.html', {'workers': workers, 'today': date.today()})
+
+@role_required('admin')
+def admin_mark_worker_ajax(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        worker_id = data.get('worker_id')
+        worker = get_object_or_404(User, id=worker_id, role='worker')
+        
+        slots_data = data.get('slots', {}) # {'early': True/False, 'morning': True...}
+        
+        for slot_key, is_present in slots_data.items():
+            if is_present is not None:
+                Attendance.objects.update_or_create(
+                    worker=worker, 
+                    date=date.today(), 
+                    slot=slot_key,
+                    defaults={'is_present': is_present}
+                )
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'invalid request'}, status=400)
+
+@role_required('admin')
+def admin_sites(request):
+    return render(request, 'admin_sites.html', {'sites': Site.objects.all()})
+
+@role_required('admin')
+def admin_tasks(request):
+    return render(request, 'admin_tasks.html', {'tasks': Task.objects.select_related('worker', 'site').order_by('-created_at')})
+
+@role_required('admin')
+def admin_all_attendance(request):
+    from datetime import timedelta
+    workers = User.objects.filter(role='worker')
+    worker_data = []
+    for w in workers:
+        records = Attendance.objects.filter(worker=w).order_by('date')
+        present = records.filter(is_present=True).count()
+        absent = records.filter(is_present=False).count()
+        total = present + absent
+        pct = round((present / total) * 100) if total > 0 else 0
+        dates_map = {}
+        for r in records:
+            key = r.date
+            if key not in dates_map:
+                dates_map[key] = {'early': None, 'morning': None, 'afternoon': None}
+            dates_map[key][r.slot] = r.is_present
+        day_rows = []
+        if dates_map:
+            start = min(dates_map.keys())
+            end = date.today()
+            d = start
+            idx = 1
+            while d <= end:
+                slots = dates_map.get(d, {'early': None, 'morning': None, 'afternoon': None})
+                day_present = sum(1 for v in slots.values() if v is True)
+                day_rows.append({'idx': idx, 'date': d, 'day': d.strftime('%a'), 'early': slots['early'], 'morning': slots['morning'], 'afternoon': slots['afternoon'], 'day_present': day_present})
+                idx += 1
+                d += timedelta(days=1)
+        worker_data.append({'worker': w, 'present': present, 'absent': absent, 'total': total, 'pct': pct, 'rows': day_rows})
+    return render(request, 'admin_attendance.html', {'worker_data': worker_data, 'today': date.today()})
+
+@role_required('admin')
+def admin_updates(request):
+    return render(request, 'admin_updates.html', {'updates': WorkUpdate.objects.select_related('worker', 'site').order_by('-created_at')})
+
+@role_required('admin')
+def admin_all_bills(request):
+    return render(request, 'admin_bills.html', {'bills': Bill.objects.select_related('site', 'uploaded_by').order_by('-date')})
+
+# --- WORKER VIEWS ---
+@role_required('worker')
+def worker_my_tasks(request):
+    return render(request, 'worker_tasks.html', {'tasks': Task.objects.filter(worker=request.user).select_related('site').order_by('-created_at')})
+
+@role_required('worker')
+def worker_my_sites(request):
+    return render(request, 'worker_sites.html', {'sites': request.user.assigned_sites.all()})
+
+@role_required('worker')
+def worker_my_attendance(request):
+    from datetime import date, timedelta
+    records = Attendance.objects.filter(worker=request.user).order_by('date')
+    
+    present_slots = records.filter(is_present=True).count()
+    absent_slots = records.filter(is_present=False).count()
+    total_slots = present_slots + absent_slots
+    attendance_pct = round((present_slots / total_slots * 100), 1) if total_slots > 0 else 0
+
+    day_rows = []
+    if records.exists():
+        first_date = records.first().date
+        today = date.today()
+        current = first_date
+        while current <= today:
+            day_records = records.filter(date=current)
+            
+            def get_slot_info(slot_name):
+                r = day_records.filter(slot=slot_name).first()
+                if not r:
+                    return {'sym': 'NT', 'color': '#BDBDBD', 'is_p': False}
+                sym = 'P' if r.is_present else 'A'
+                color = '#2E7D32' if r.is_present else '#C62828'
+                return {'sym': sym, 'color': color, 'is_p': r.is_present}
+            
+            e = get_slot_info('early')
+            m = get_slot_info('morning')
+            a = get_slot_info('afternoon')
+            dp = sum([1 for s in [e, m, a] if s['is_p']])
+
+            if dp == 3:
+                badge = 'badge-done'
+            elif dp >= 1:
+                badge = 'badge-pending'
+            else:
+                badge = 'badge-absent'
+
+            day_rows.append({
+                'date': current.strftime('%b %d, %Y'),
+                'day_name': current.strftime('%a'),
+                'early': e['sym'],
+                'early_color': e['color'],
+                'morning': m['sym'],
+                'morning_color': m['color'],
+                'afternoon': a['sym'],
+                'afternoon_color': a['color'],
+                'day_present': dp,
+                'day_badge': badge,
+                'is_today': current == today,
+            })
+            current += timedelta(days=1)
+    
+    day_rows.reverse()
+    marked_slots = {att.slot: att.is_present for att in Attendance.objects.filter(worker=request.user, date=date.today())}
+
+    return render(request, 'worker_attendance.html', {
+        'present_slots': present_slots,
+        'absent_slots': absent_slots,
+        'total_slots': total_slots,
+        'attendance_pct': attendance_pct,
+        'day_rows': day_rows,
+        'today': date.today(),
+        'marked_slots': marked_slots,
+    })
+
+@role_required('worker')
+def worker_my_updates(request):
+    return render(request, 'worker_updates.html', {'updates': WorkUpdate.objects.filter(worker=request.user).order_by('-created_at')})
+
+@role_required('worker')
+def worker_my_bills(request):
+    return render(request, 'worker_bills.html', {'bills': Bill.objects.filter(uploaded_by=request.user).order_by('-date')})
+
+# --- CUSTOMER VIEWS ---
+@role_required('customer')
+def customer_sites(request):
+    return render(request, 'customer_sites.html', {'sites': Site.objects.filter(customer=request.user)})
+
+@role_required('customer')
+def customer_updates(request):
+    return render(request, 'customer_updates.html', {'updates': WorkUpdate.objects.filter(site__customer=request.user).order_by('-created_at')})
+
+@role_required('customer')
+def customer_bills(request):
+    return redirect('customer_dashboard')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FEATURE 1 — Customer Management
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@role_required('admin')
+def admin_customers(request):
+    customers = User.objects.filter(role='customer')
+    return render(request, 'admin_customers.html', {'customers': customers})
+
+
+@role_required('admin')
+def add_customer(request):
+    if request.method == 'POST':
+        form = CustomerCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Customer account created successfully.')
+            return redirect('admin_customers')
+    else:
+        form = CustomerCreationForm()
+    return render(request, 'form_template.html', {
+        'form': form, 'title': 'Add Customer', 'back_url': 'admin_customers'
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FEATURE 2 — Edit & Delete: Workers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@role_required('admin')
+def edit_worker(request, worker_id):
+    worker = get_object_or_404(User, id=worker_id, role='worker')
+    profile, created = WorkerProfile.objects.get_or_create(user=worker)
+    
+    if request.method == 'POST':
+        form = WorkerEditForm(request.POST, request.FILES, instance=worker)
+        if form.is_valid():
+            worker = form.save(commit=False)
+            
+            full_name = form.cleaned_data['full_name']
+            name_parts = full_name.strip().split(' ', 1)
+            worker.first_name = name_parts[0]
+            worker.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            
+            worker.phone = form.cleaned_data['phone']
+            
+            new_username = form.cleaned_data.get('new_username')
+            if new_username:
+                worker.username = new_username
+                
+            new_pw = form.cleaned_data.get('new_password')
+            if new_pw:
+                worker.set_password(new_pw)
+                
+            worker.save()
+            
+            profile.age = form.cleaned_data['age']
+            profile.phone = form.cleaned_data['phone']
+            profile.family_phone = form.cleaned_data['family_phone']
+            profile.address = form.cleaned_data['address']
+            
+            if form.cleaned_data.get('photo'):
+                profile.photo = form.cleaned_data['photo']
+            if form.cleaned_data.get('id_proof'):
+                profile.id_proof = form.cleaned_data['id_proof']
+                
+            profile.save()
+            messages.success(request, f'Worker updated successfully.')
+            return redirect('admin_workers')
+    else:
+        initial = {
+            'full_name': worker.get_full_name() or worker.username,
+            'age': profile.age,
+            'phone': profile.phone or worker.phone,
+            'family_phone': profile.family_phone,
+            'address': profile.address,
+            'new_username': worker.username,
+        }
+        form = WorkerEditForm(instance=worker, initial=initial)
+    return render(request, 'form_template.html', {
+        'form': form,
+        'title': f'Edit Worker — {worker.get_full_name() or worker.username}',
+        'back_url': 'admin_workers'
+    })
+
+
+@role_required('admin')
+def delete_worker(request, worker_id):
+    worker = get_object_or_404(User, id=worker_id, role='worker')
+    if request.method == 'POST':
+        name = worker.get_full_name() or worker.username
+        worker.delete()
+        messages.success(request, f'Worker "{name}" deleted.')
+        return redirect('admin_workers')
+    return render(request, 'confirm_delete.html', {
+        'object_name': worker.get_full_name() or worker.username,
+        'object_type': 'Worker',
+        'back_url': 'admin_workers',
+    })
+
+@role_required('admin')
+def worker_detail(request, worker_id):
+    worker = get_object_or_404(User, id=worker_id, role='worker')
+    profile, created = WorkerProfile.objects.get_or_create(user=worker)
+    attendances = Attendance.objects.filter(worker=worker).order_by('-date')[:30]
+    total_slots = Attendance.objects.filter(worker=worker, is_present=True).count()
+    present_days = total_slots // 2
+    unique_dates = Attendance.objects.filter(worker=worker).values('date').distinct().count()
+    absent_days = max(0, unique_dates - present_days)
+    attendance_stats = {
+        'present': present_days,
+        'absent': absent_days,
+        'total': unique_dates,
+    }
+    return render(request, 'admin_worker_detail.html', {
+        'worker': worker,
+        'profile': profile,
+        'attendances': attendances,
+        'attendance_stats': attendance_stats,
+    })
+
+
+# ── Edit & Delete: Sites ───────────────────────────────────────────────────────
+
+@role_required('admin')
+def edit_site(request, site_id):
+    site = get_object_or_404(Site, id=site_id)
+    customer = site.customer
+    if request.method == 'POST':
+        form = SiteEditForm(request.POST, request.FILES, instance=site)
+        if form.is_valid():
+            site = form.save(commit=False)
+            site.owner_name = form.cleaned_data.get('owner_name_field', site.owner_name)
+            site.owner_phone = form.cleaned_data.get('owner_phone_field', site.owner_phone)
+            site.save()
+            # Update linked customer user
+            if customer:
+                new_username = form.cleaned_data.get('new_username', '').strip()
+                new_password = form.cleaned_data.get('new_password', '').strip()
+                owner_name = form.cleaned_data.get('owner_name_field', '').strip()
+                owner_phone = form.cleaned_data.get('owner_phone_field', '').strip()
+                if new_username and new_username != customer.username:
+                    if not User.objects.filter(username=new_username).exclude(pk=customer.pk).exists():
+                        customer.username = new_username
+                if new_password:
+                    customer.set_password(new_password)
+                if owner_name:
+                    parts = owner_name.split(' ', 1)
+                    customer.first_name = parts[0]
+                    customer.last_name = parts[1] if len(parts) > 1 else ''
+                if owner_phone:
+                    customer.phone = owner_phone
+                customer.save()
+            messages.success(request, f'Site "{site.name}" updated.')
+            return redirect('admin_sites')
+    else:
+        initial = {}
+        if customer:
+            initial['new_username'] = customer.username
+            initial['owner_name_field'] = customer.get_full_name() or site.owner_name
+            initial['owner_phone_field'] = customer.phone or site.owner_phone
+        form = SiteEditForm(instance=site, initial=initial)
+    return render(request, 'form_template.html', {
+        'form': form, 'title': f'Edit Site — {site.name}', 'back_url': 'admin_sites'
+    })
+
+
+@role_required('admin')
+def delete_site(request, site_id):
+    site = get_object_or_404(Site, id=site_id)
+    if request.method == 'POST':
+        name = site.name
+        site.delete()
+        messages.success(request, f'Site "{name}" deleted.')
+        return redirect('admin_sites')
+    return render(request, 'confirm_delete.html', {
+        'object_name': site.name, 'object_type': 'Site', 'back_url': 'admin_sites',
+    })
+
+
+# ── Edit & Delete: Tasks ───────────────────────────────────────────────────────
+
+@role_required('admin')
+def edit_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Task "{task.title}" updated.')
+            return redirect('admin_tasks')
+    else:
+        form = TaskForm(instance=task)
+    return render(request, 'form_template.html', {
+        'form': form, 'title': f'Edit Task — {task.title}', 'back_url': 'admin_tasks'
+    })
+
+
+@role_required('admin')
+def delete_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    if request.method == 'POST':
+        name = task.title
+        task.delete()
+        messages.success(request, f'Task "{name}" deleted.')
+        return redirect('admin_tasks')
+    return render(request, 'confirm_delete.html', {
+        'object_name': task.title, 'object_type': 'Task', 'back_url': 'admin_tasks',
+    })
+
+
+# ── Edit & Delete: Bills ───────────────────────────────────────────────────────
+
+@role_required('admin')
+def edit_bill(request, bill_id):
+    bill = get_object_or_404(Bill, id=bill_id)
+    if request.method == 'POST':
+        form = BillForm(request.POST, request.FILES, instance=bill)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Bill updated successfully.')
+            return redirect('admin_all_bills')
+    else:
+        form = BillForm(instance=bill)
+    return render(request, 'form_template.html', {
+        'form': form, 'title': f'Edit Bill — {bill.site.name}', 'back_url': 'admin_all_bills'
+    })
+
+
+@role_required('admin')
+def delete_bill(request, bill_id):
+    bill = get_object_or_404(Bill, id=bill_id)
+    if request.method == 'POST':
+        label = f'₹{bill.amount} — {bill.site.name}'
+        bill.delete()
+        messages.success(request, f'Bill "{label}" deleted.')
+        return redirect('admin_all_bills')
+    return render(request, 'confirm_delete.html', {
+        'object_name': f'₹{bill.amount} — {bill.site.name}',
+        'object_type': 'Bill',
+        'back_url': 'admin_all_bills',
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FEATURE 5 — Profile Settings (all roles)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def profile_settings(request):
+    is_admin = request.user.role == 'admin' or request.user.is_superuser
+    if request.method == 'POST':
+        if not is_admin:
+            messages.error(request, 'You do not have permission to edit your profile.')
+            return redirect('profile_settings')
+            
+        form = ProfileSettingsForm(request.user, request.POST)
+        if form.is_valid():
+            user = request.user
+            user.first_name = form.cleaned_data['first_name']
+            user.last_name  = form.cleaned_data['last_name']
+            user.phone      = form.cleaned_data['phone']
+            new_pw = form.cleaned_data.get('new_password')
+            if new_pw:
+                user.set_password(new_pw)
+                update_session_auth_hash(request, user)   # keeps session alive
+            user.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('profile_settings')
+    else:
+        form = ProfileSettingsForm(request.user, initial={
+            'first_name': request.user.first_name,
+            'last_name':  request.user.last_name,
+            'phone':      request.user.phone,
+        })
+    return render(request, 'profile_settings.html', {'form': form})
