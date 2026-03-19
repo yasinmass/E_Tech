@@ -43,7 +43,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            log_activity(user, f"Logged in to the app", 'auth')
+            log_activity(user, f"Logged in as {user.role}", 'auth')
             return _redirect_by_role(user)
         else:
             return render(request, 'login.html', {'error': 'Invalid username or password.'})
@@ -494,10 +494,12 @@ def worker_my_bills(request):
 # --- CUSTOMER VIEWS ---
 @role_required('customer')
 def customer_sites(request):
+    log_activity(request.user, f"Viewed site details", 'site')
     return render(request, 'customer_sites.html', {'sites': Site.objects.filter(customer=request.user)})
 
 @role_required('customer')
 def customer_updates(request):
+    log_activity(request.user, f"Viewed work updates for their site", 'update')
     return render(request, 'customer_updates.html', {'updates': WorkUpdate.objects.filter(site__customer=request.user).order_by('-created_at')})
 
 @role_required('customer')
@@ -1065,6 +1067,7 @@ def update_task_status(request, task_id):
 def customer_tasks(request):
     if request.user.role != 'customer':
         return redirect('login')
+    log_activity(request.user, f"Viewed tasks for their site", 'task')
     try:
         site = Site.objects.get(customer=request.user)
         tasks = Task.objects.filter(site=site).prefetch_related(
@@ -1108,16 +1111,14 @@ def activity_history(request):
     
     online_threshold = timezone.now() - timedelta(minutes=3)
     online_users = User.objects.filter(
-        last_seen__gte=online_threshold,
-        role__in=['worker', 'customer']
-    )
+        last_seen__gte=online_threshold
+    ).exclude(role='admin').order_by('-last_seen')
     
     recent_threshold = timezone.now() - timedelta(minutes=30)
     recent_users = User.objects.filter(
         last_seen__gte=recent_threshold,
-        last_seen__lt=online_threshold,
-        role__in=['worker', 'customer']
-    )
+        last_seen__lt=online_threshold
+    ).exclude(role='admin').order_by('-last_seen')
     
     return render(request, 'history.html', {
         'logs': logs,
