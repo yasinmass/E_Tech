@@ -145,3 +145,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.User'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://etech-production.up.railway.app',
+]
