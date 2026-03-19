@@ -1106,14 +1106,18 @@ def activity_history(request):
     from django.utils import timezone
     from datetime import timedelta
     
-    online_threshold = timezone.now() - timedelta(minutes=10)
-    online_users = User.objects.filter(last_seen__gte=online_threshold).exclude(role='admin')
+    online_threshold = timezone.now() - timedelta(minutes=3)
+    online_users = User.objects.filter(
+        last_seen__gte=online_threshold,
+        role__in=['worker', 'customer']
+    )
     
-    recent_threshold = timezone.now() - timedelta(hours=1)
+    recent_threshold = timezone.now() - timedelta(minutes=30)
     recent_users = User.objects.filter(
         last_seen__gte=recent_threshold,
-        last_seen__lt=online_threshold
-    ).exclude(role='admin')
+        last_seen__lt=online_threshold,
+        role__in=['worker', 'customer']
+    )
     
     return render(request, 'history.html', {
         'logs': logs,
@@ -1122,3 +1126,11 @@ def activity_history(request):
         'online_users': online_users,
         'recent_users': recent_users,
     })
+@login_required
+def heartbeat(request):
+    from django.http import JsonResponse
+    from django.utils import timezone
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    User.objects.filter(id=request.user.id).update(last_seen=timezone.now())
+    return JsonResponse({'status': 'ok'})

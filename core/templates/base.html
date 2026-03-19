@@ -1067,6 +1067,32 @@
             if (h2 && titleEl) titleEl.textContent = h2.textContent.replace(/[^\w\s\-]/g, '').trim();
         });
     </script>
+    {% if user.is_authenticated %}
+    <script>
+    function sendHeartbeat() {
+      fetch("/heartbeat/", {
+        method: 'GET',
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+      }).catch(() => {});
+    }
+
+    // Send immediately on page load
+    sendHeartbeat();
+
+    // Send every 2 minutes (120000ms)
+    let heartbeatInterval = setInterval(sendHeartbeat, 120000);
+
+    // Stop when tab is closed or hidden
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        clearInterval(heartbeatInterval);
+      } else {
+        sendHeartbeat();
+        heartbeatInterval = setInterval(sendHeartbeat, 120000);
+      }
+    });
+    </script>
+    {% endif %}
 </body>
 
 </html>
