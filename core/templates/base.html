@@ -852,8 +852,9 @@
     <aside class="sidebar" id="sidebar">
         <div
             style="display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.15);">
-            <div style="width:36px;height:36px;background:#ffffff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <img src="{% static 'images/logo.png' %}" alt="E-Tech Builders" style="width:28px;height:28px;object-fit:contain;">
+            <div
+                style="width:36px;height:36px;background:#ffffff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img src="{% static 'images/logo.png' %}" alt="logo" style="width:28px;height:28px;object-fit:contain;">
             </div>
             <span style="font-size:15px;font-weight:600;color:#ffffff;letter-spacing:-0.3px;">E-Tech <span
                     style="color:#FFD54F;">Builders</span></span>
@@ -888,9 +889,9 @@
             </a>
             <a href="{% url 'tools_list' %}" class="menu-item {% if '/tools/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">🔧</span>Tools
-            </a>
-            <a href="{% url 'activity_history' %}" class="menu-item {% if '/history/' in request.path %}active{% endif %}">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">📊</span>Activity
+            </a>
+            <a href="{% url 'activity_history' %}" class="menu-item {% if '/history/' in request.path %}active{% endif %}">
+                <span class="menu-icon"></span> <span style="margin-right:6px;">&#128220;</span>History
             </a>
 
 

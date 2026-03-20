@@ -28,14 +28,7 @@
         <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#2E7D32;border-radius:50%;border:2px solid #fff;"></div>
       </div>
       <div>
-        <div style="font-size:13px;font-weight:500;color:#1A1A2E;">
-          {{ user.get_full_name|default:user.username }}
-          <span style="font-size:10px;padding:2px 8px;border-radius:20px;margin-left:6px;
-            {% if user.role == 'worker' %}background:#EBF4FF;color:#1565C0;
-            {% else %}background:#E8F5E9;color:#2E7D32;{% endif %}">
-            {{ user.role }}
-          </span>
-        </div>
+        <div style="font-size:13px;font-weight:500;color:#1A1A2E;">{{ user.get_full_name|default:user.username }}</div>
         <div style="font-size:11px;color:#2E7D32;">Active now · {{ user.last_seen|timesince }} ago</div>
       </div>
     </div>
@@ -57,14 +50,7 @@
         <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#F57C00;border-radius:50%;border:2px solid #fff;"></div>
       </div>
       <div>
-        <div style="font-size:13px;font-weight:500;color:#1A1A2E;">
-          {{ user.get_full_name|default:user.username }}
-          <span style="font-size:10px;padding:2px 8px;border-radius:20px;margin-left:6px;
-            {% if user.role == 'worker' %}background:#EBF4FF;color:#1565C0;
-            {% else %}background:#E8F5E9;color:#2E7D32;{% endif %}">
-            {{ user.role }}
-          </span>
-        </div>
+        <div style="font-size:13px;font-weight:500;color:#1A1A2E;">{{ user.get_full_name|default:user.username }}</div>
         <div style="font-size:11px;color:#F57C00;">Last seen {{ user.last_seen|timesince }} ago</div>
       </div>
     </div>
