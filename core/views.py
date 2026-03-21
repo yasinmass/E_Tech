@@ -209,12 +209,17 @@ def upload_bill(request):
     if request.method == "POST":
         form = BillForm(request.POST, request.FILES)
         if form.is_valid():
-            bill = form.save(commit=False)
+            instance = form.save(commit=False)
             if 'photo' in request.FILES:
-                bill.photo = compress_image(request.FILES['photo'], max_size_mb=2)
-            bill.uploaded_by = request.user
-            bill.save()
-            log_activity(request.user, f"Uploaded bill: ₹{bill.amount} — {bill.site.name}", 'bill')
+                original_size = request.FILES['photo'].size
+                compressed = compress_image(request.FILES['photo'], max_size_mb=2)
+                compressed_size = compressed.size
+                print(f"DEBUG: Original size: {original_size} bytes = {original_size/1024/1024:.2f}MB")
+                print(f"DEBUG: Compressed size: {compressed_size} bytes = {compressed_size/1024/1024:.2f}MB")
+                instance.photo = compressed
+            instance.uploaded_by = request.user
+            instance.save()
+            log_activity(request.user, f"Uploaded bill: ₹{instance.amount} — {instance.site.name}", 'bill')
             return redirect('admin_dashboard')
     else:
         form = BillForm()
@@ -1166,3 +1171,34 @@ def heartbeat(request):
     User = get_user_model()
     User.objects.filter(id=request.user.id).update(last_seen=timezone.now())
     return JsonResponse({'status': 'ok'})
+
+
+def test_compression(request):
+    from django.http import JsonResponse
+    from .utils import compress_image
+    import io
+    from PIL import Image
+
+    # Create a test image of exactly 3MB
+    img = Image.new('RGB', (3000, 2000), color='red')
+    output = io.BytesIO()
+    img.save(output, format='JPEG', quality=95)
+    output.seek(0)
+
+    original_size = output.tell()
+
+    # Create a fake uploaded file
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+    fake_file = InMemoryUploadedFile(
+        output, 'ImageField', 'test.jpg',
+        'image/jpeg', original_size, None
+    )
+
+    compressed = compress_image(fake_file, max_size_mb=1)
+    compressed_size = compressed.size
+
+    return JsonResponse({
+        'original_size_mb': round(original_size / 1024 / 1024, 2),
+        'compressed_size_mb': round(compressed_size / 1024 / 1024, 2),
+        'compression_worked': compressed_size < original_size,
+    })

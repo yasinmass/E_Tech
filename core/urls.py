@@ -88,4 +88,7 @@ urlpatterns = [
     path('tools/<int:tool_id>/return/', views.return_tool, name='return_tool'),
     path('tools/<int:tool_id>/delete/', views.delete_tool, name='delete_tool'),
     path('tools/<int:tool_id>/edit/', views.edit_tool, name='edit_tool'),
+
+    # ── Debug / Test ──────────────────────────────────────────────────────────
+    path('test-compression/', views.test_compression, name='test_compression'),
 ]
