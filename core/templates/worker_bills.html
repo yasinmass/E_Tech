@@ -10,6 +10,57 @@
   <a href="{% url 'worker_upload_bill' %}" class="btn btn-warning">＋ Upload Bill</a>
 </div>
 
+<form method="get" style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;padding:16px;margin-bottom:16px;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px;">
+
+    <!-- Search -->
+    <div>
+      <label style="font-size:11px;color:#5A6A85;font-weight:500;display:block;margin-bottom:4px;">Search</label>
+      <input type="text" name="search" value="{{ search }}"
+        placeholder="Search bill title..."
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:36px;padding:0 10px;font-size:13px;">
+    </div>
+
+    <!-- Date From -->
+    <div>
+      <label style="font-size:11px;color:#5A6A85;font-weight:500;display:block;margin-bottom:4px;">From Date</label>
+      <input type="date" name="date_from" value="{{ date_from }}"
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:36px;padding:0 10px;font-size:13px;">
+    </div>
+
+    <!-- Date To -->
+    <div>
+      <label style="font-size:11px;color:#5A6A85;font-weight:500;display:block;margin-bottom:4px;">To Date</label>
+      <input type="date" name="date_to" value="{{ date_to }}"
+        style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:36px;padding:0 10px;font-size:13px;">
+    </div>
+
+  </div>
+
+  <div style="display:flex;gap:8px;">
+    <button type="submit"
+      style="background:#1A73E8;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;">
+      🔍 Filter
+    </button>
+    <a href="{% url 'worker_my_bills' %}"
+      style="background:#F1EFE8;color:#444441;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;">
+      ✕ Clear
+    </a>
+  </div>
+</form>
+
+<!-- Total amount summary -->
+{% if bills %}
+<div style="background:#E8F5E9;border:1px solid #C8E6C9;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+  <span style="font-size:13px;color:#2E7D32;font-weight:500;">
+    {{ bills.count }} bill{{ bills.count|pluralize }} found
+  </span>
+  <span style="font-size:15px;font-weight:600;color:#2E7D32;">
+    Total: ₹{{ total_amount|floatformat:0 }}
+  </span>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="table-wrapper">
     <table>
