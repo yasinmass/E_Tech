@@ -210,6 +210,29 @@
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(26, 115, 232, 0.16);
   }
+
+  @media (max-width: 768px) {
+    /* Worker cards single column */
+    #workerCardsView > div {
+      grid-template-columns: 1fr !important;
+    }
+    /* Summary stats 2 columns */
+    .grid-stats {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+    /* Table in detail view scrolls horizontally */
+    .table-wrapper {
+      overflow-x: auto !important;
+    }
+    .table-wrapper table {
+      min-width: 480px;
+    }
+    /* Stat card in detail */
+    div[style*="grid-template-columns:repeat(4,1fr)"] {
+      grid-template-columns: repeat(2, 1fr) !important;
+      display: grid !important;
+    }
+  }
 </style>
 
 {% endblock %}

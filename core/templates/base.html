@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>{% block title %}E-Tech Builders{% endblock %}</title>
     <meta name="description" content="E-Tech Builders — Construction Workforce Management System">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -842,6 +842,191 @@
                 grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             }
         }
+
+        /* ═══════════════ MOBILE (≤768px) ═══════════════ */
+        @media (max-width: 768px) {
+            /* Main content full width */
+            .main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            /* Topbar padding */
+            .top-navbar {
+                padding: 0 14px !important;
+            }
+
+            /* Page title in navbar smaller */
+            .page-title-bar {
+                font-size: 12px !important;
+                max-width: 120px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Role badge hidden on tiny screens */
+            .top-navbar .role-badge,
+            .top-navbar span[style*="text-transform:uppercase"] {
+                display: none !important;
+            }
+
+            /* Profile button — show only avatar, hide name */
+            .top-navbar span[style*="font-size:13px"] {
+                display: none !important;
+            }
+
+            /* Main content padding */
+            main {
+                padding: 14px !important;
+            }
+
+            /* Page header stacks */
+            .page-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 10px !important;
+            }
+
+            .page-header h2 {
+                font-size: 18px !important;
+            }
+
+            /* Stat grids — 2 columns */
+            .grid-stats {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+            }
+
+            /* Generic grids — single column */
+            .grid,
+            .grid-2 {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Cards padding smaller */
+            .card {
+                padding: 14px !important;
+            }
+
+            .stat-card {
+                padding: 12px !important;
+            }
+
+            .stat-number {
+                font-size: 22px !important;
+            }
+
+            /* Tables always scroll horizontally */
+            .table-wrapper {
+                overflow-x: auto !important;
+            }
+
+            /* Table min-width so columns don't crush */
+            .table-wrapper table {
+                min-width: 480px;
+            }
+
+            /* Modals nearly full screen */
+            .modal-box {
+                width: 95% !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+                margin: 10px auto !important;
+            }
+
+            /* Slot cards wrap on very small */
+            .slot-card {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            /* Buttons touch-friendly */
+            .btn,
+            button.btn {
+                min-height: 40px !important;
+                padding: 8px 12px !important;
+                font-size: 13px !important;
+            }
+
+            /* Section headers wrap */
+            .section-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            /* Login card */
+            .login-card {
+                width: 95% !important;
+                padding: 24px 16px !important;
+                margin: 20px auto !important;
+            }
+
+            /* Form card */
+            .form-card {
+                padding: 16px !important;
+            }
+
+            /* Profile dropdown — keep it inside viewport */
+            #profileMenu {
+                right: 0 !important;
+                left: auto !important;
+                width: 180px !important;
+                font-size: 12px !important;
+            }
+
+            /* Worker detail / attendance summary grid */
+            .grid-stats[style*="grid-template-columns:repeat(4"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* Attendance cards — single column */
+            #workerCardsView > div {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Summary stats in attendance detail */
+            div[style*="grid-template-columns:repeat(4,1fr)"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* worker_sites table wrapper */
+            .site-table-wrap {
+                overflow-x: auto;
+            }
+
+            /* Touch-friendly links / nav items */
+            .menu-item,
+            .menu-item-logout {
+                min-height: 44px !important;
+                padding: 10px 14px !important;
+            }
+
+            /* Toast — full width bottom */
+            #toast {
+                right: 12px !important;
+                left: 12px !important;
+                bottom: 16px !important;
+                width: auto !important;
+                font-size: 13px !important;
+            }
+        }
+
+        /* ═════ Extra small phones (≤400px) ═════ */
+        @media (max-width: 400px) {
+            .grid-stats {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .stat-card {
+                padding: 10px !important;
+            }
+            .stat-number {
+                font-size: 18px !important;
+            }
+            .page-header h2 {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 
@@ -1059,6 +1244,20 @@
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('sidebarOverlay').classList.toggle('active');
         }
+
+        // Close sidebar when clicking a nav item on mobile
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.menu-item, .menu-item-logout').forEach(function(item) {
+                item.addEventListener('click', function () {
+                    if (window.innerWidth <= 900) {
+                        var sidebar = document.getElementById('sidebar');
+                        var overlay = document.getElementById('sidebarOverlay');
+                        if (sidebar) sidebar.classList.remove('active');
+                        if (overlay) overlay.classList.remove('active');
+                    }
+                });
+            });
+        });
 
         // Set page title in navbar from page h2
         document.addEventListener('DOMContentLoaded', function () {
