@@ -748,11 +748,17 @@ def delete_task(request, task_id):
 def edit_bill(request, bill_id):
     bill = get_object_or_404(Bill, id=bill_id)
     if request.method == 'POST':
+        print(f"DEBUG edit_bill: request.FILES keys = {list(request.FILES.keys())}")
+        print(f"DEBUG edit_bill: request.POST keys = {list(request.POST.keys())}")
         form = BillForm(request.POST, request.FILES, instance=bill)
         if form.is_valid():
+            print(f"DEBUG edit_bill: form.cleaned_data keys = {list(form.cleaned_data.keys())}")
             instance = form.save(commit=False)
             if 'photo' in request.FILES:
+                print("DEBUG edit_bill: photo found in FILES")
                 instance.photo = compress_image(request.FILES['photo'], max_size_mb=2)
+            else:
+                print(f"DEBUG edit_bill: photo NOT in FILES, available keys: {list(request.FILES.keys())}")
             instance.save()
             messages.success(request, 'Bill updated successfully.')
             return redirect('admin_all_bills')
