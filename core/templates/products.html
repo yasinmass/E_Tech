@@ -49,11 +49,9 @@
     {% endif %}
 
     <!-- Photo -->
-    {% if product.photo %}
-      <img src="{{ product.photo }}" style="width:100%;height:110px;object-fit:cover;">
-    {% else %}
-      <div style="width:100%;height:110px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:36px;">📦</div>
-    {% endif %}
+    <div style="width:100%;height:110px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:36px;">
+      📦
+    </div>
 
     <!-- Content -->
     <div style="padding:14px; flex:1; display:flex; flex-direction:column; gap:6px;">

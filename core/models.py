@@ -106,7 +106,6 @@ class Product(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     size = models.CharField(max_length=100, blank=True)
     place = models.CharField(max_length=200, blank=True)
-    photo = models.URLField(max_length=500, blank=True, null=True, verbose_name='Image URL')
     added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

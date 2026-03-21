@@ -197,18 +197,12 @@ class ProfileSettingsForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'quantity', 'size', 'place', 'photo']
+        fields = ['name', 'quantity', 'size', 'place']
         labels = {
             'name': 'Product Name',
             'quantity': 'Quantity',
             'size': 'Size (e.g. 2 inch x 10ft)',
             'place': 'Storage Place / Location',
-            'photo': 'Image URL (paste any image link)',
-        }
-        widgets = {
-            'photo': forms.URLInput(attrs={
-                'placeholder': 'https://example.com/image.jpg'
-            }),
         }
 
 class ToolForm(forms.ModelForm):
