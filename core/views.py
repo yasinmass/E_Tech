@@ -108,6 +108,14 @@ def add_worker(request):
     if request.method == 'POST':
         form = AddWorkerForm(request.POST, request.FILES)
         if form.is_valid():
+            # Compress images before creating profile
+            compressed_photo = None
+            compressed_id_proof = None
+            if 'photo' in request.FILES:
+                compressed_photo = compress_image(request.FILES['photo'], max_size_mb=1)
+            if 'id_proof' in request.FILES:
+                compressed_id_proof = compress_image(request.FILES['id_proof'], max_size_mb=2)
+
             user = User.objects.create_user(
                 username=form.cleaned_data['login_username'],
                 password=form.cleaned_data['login_password'],
@@ -125,12 +133,10 @@ def add_worker(request):
                 age=form.cleaned_data['age'],
                 phone=form.cleaned_data['phone'],
                 family_phone=form.cleaned_data['family_phone'],
-                address=form.cleaned_data['address']
+                address=form.cleaned_data['address'],
+                photo=compressed_photo,
+                id_proof=compressed_id_proof,
             )
-            if 'photo' in request.FILES:
-                profile.photo = compress_image(request.FILES['photo'], max_size_mb=1)
-            if 'id_proof' in request.FILES:
-                profile.id_proof = compress_image(request.FILES['id_proof'], max_size_mb=2)
             profile.save()
 
             log_activity(request.user, f"Added new worker: {user.get_full_name() or user.username}", 'worker')
@@ -145,9 +151,9 @@ def add_site(request):
         form = SiteForm(request.POST, request.FILES)
         if form.is_valid():
             if 'site_photo' in request.FILES:
-                request.FILES['site_photo'] = compress_image(request.FILES['site_photo'], max_size_mb=1)
+                form.cleaned_data['site_photo'] = compress_image(request.FILES['site_photo'], max_size_mb=1)
             if 'owner_photo' in request.FILES:
-                request.FILES['owner_photo'] = compress_image(request.FILES['owner_photo'], max_size_mb=1)
+                form.cleaned_data['owner_photo'] = compress_image(request.FILES['owner_photo'], max_size_mb=1)
             site = form.save(commit=False)
             username = form.cleaned_data['owner_username']
             password = form.cleaned_data['owner_password']
@@ -209,14 +215,14 @@ def upload_bill(request):
     if request.method == "POST":
         form = BillForm(request.POST, request.FILES)
         if form.is_valid():
-            instance = form.save(commit=False)
             if 'photo' in request.FILES:
                 original_size = request.FILES['photo'].size
                 compressed = compress_image(request.FILES['photo'], max_size_mb=2)
                 compressed_size = compressed.size
                 print(f"DEBUG: Original size: {original_size} bytes = {original_size/1024/1024:.2f}MB")
                 print(f"DEBUG: Compressed size: {compressed_size} bytes = {compressed_size/1024/1024:.2f}MB")
-                instance.photo = compressed
+                form.cleaned_data['photo'] = compressed
+            instance = form.save(commit=False)
             instance.uploaded_by = request.user
             instance.save()
             log_activity(request.user, f"Uploaded bill: ₹{instance.amount} — {instance.site.name}", 'bill')
@@ -299,9 +305,9 @@ def worker_upload_update(request):
     if request.method == "POST":
         form = WorkUpdateForm(request.POST, request.FILES)
         if form.is_valid():
-            update = form.save(commit=False)
             if 'image' in request.FILES:
-                update.image = compress_image(request.FILES['image'], max_size_mb=2)
+                form.cleaned_data['image'] = compress_image(request.FILES['image'], max_size_mb=2)
+            update = form.save(commit=False)
             update.worker = request.user
             update.save()
             log_activity(request.user, f"Uploaded work update for site: {update.site.name}", 'update')
@@ -316,9 +322,9 @@ def worker_upload_bill(request):
     if request.method == "POST":
         form = BillForm(request.POST, request.FILES)
         if form.is_valid():
-            bill = form.save(commit=False)
             if 'photo' in request.FILES:
-                bill.photo = compress_image(request.FILES['photo'], max_size_mb=2)
+                form.cleaned_data['photo'] = compress_image(request.FILES['photo'], max_size_mb=2)
+            bill = form.save(commit=False)
             bill.uploaded_by = request.user
             bill.save()
             return redirect('worker_dashboard')
@@ -562,6 +568,14 @@ def edit_worker(request, worker_id):
     if request.method == 'POST':
         form = WorkerEditForm(request.POST, request.FILES, instance=worker)
         if form.is_valid():
+            # Compress images first
+            compressed_photo = None
+            compressed_id_proof = None
+            if 'photo' in request.FILES:
+                compressed_photo = compress_image(request.FILES['photo'], max_size_mb=1)
+            if 'id_proof' in request.FILES:
+                compressed_id_proof = compress_image(request.FILES['id_proof'], max_size_mb=2)
+
             worker = form.save(commit=False)
             
             full_name = form.cleaned_data['full_name']
@@ -586,10 +600,10 @@ def edit_worker(request, worker_id):
             profile.family_phone = form.cleaned_data['family_phone']
             profile.address = form.cleaned_data['address']
             
-            if 'photo' in request.FILES:
-                profile.photo = compress_image(request.FILES['photo'], max_size_mb=1)
-            if 'id_proof' in request.FILES:
-                profile.id_proof = compress_image(request.FILES['id_proof'], max_size_mb=2)
+            if compressed_photo:
+                profile.photo = compressed_photo
+            if compressed_id_proof:
+                profile.id_proof = compressed_id_proof
                 
             profile.save()
             messages.success(request, f'Worker updated successfully.')
@@ -657,9 +671,9 @@ def edit_site(request, site_id):
         form = SiteEditForm(request.POST, request.FILES, instance=site)
         if form.is_valid():
             if 'site_photo' in request.FILES:
-                request.FILES['site_photo'] = compress_image(request.FILES['site_photo'], max_size_mb=1)
+                form.cleaned_data['site_photo'] = compress_image(request.FILES['site_photo'], max_size_mb=1)
             if 'owner_photo' in request.FILES:
-                request.FILES['owner_photo'] = compress_image(request.FILES['owner_photo'], max_size_mb=1)
+                form.cleaned_data['owner_photo'] = compress_image(request.FILES['owner_photo'], max_size_mb=1)
             site = form.save(commit=False)
             site.owner_name = form.cleaned_data.get('owner_name_field', site.owner_name)
             site.owner_phone = form.cleaned_data.get('owner_phone_field', site.owner_phone)
@@ -752,10 +766,9 @@ def edit_bill(request, bill_id):
     if request.method == 'POST':
         form = BillForm(request.POST, request.FILES, instance=bill)
         if form.is_valid():
-            instance = form.save(commit=False)
             if 'photo' in request.FILES:
-                instance.photo = compress_image(request.FILES['photo'], max_size_mb=2)
-            instance.save()
+                form.cleaned_data['photo'] = compress_image(request.FILES['photo'], max_size_mb=2)
+            form.save()
             messages.success(request, 'Bill updated successfully.')
             return redirect('admin_all_bills')
     else:
@@ -837,9 +850,9 @@ def add_product(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            product = form.save(commit=False)
             if 'photo' in request.FILES:
-                product.photo = compress_image(request.FILES['photo'], max_size_mb=1)
+                form.cleaned_data['photo'] = compress_image(request.FILES['photo'], max_size_mb=1)
+            product = form.save(commit=False)
             product.added_by = request.user
             product.save()
             log_activity(request.user, f"Added product: {product.name} (qty: {product.quantity})", 'product')
@@ -856,10 +869,9 @@ def edit_product(request, product_id):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
-            instance = form.save(commit=False)
             if 'photo' in request.FILES:
-                instance.photo = compress_image(request.FILES['photo'], max_size_mb=1)
-            instance.save()
+                form.cleaned_data['photo'] = compress_image(request.FILES['photo'], max_size_mb=1)
+            form.save()
             return redirect('products_list')
     else:
         form = ProductForm(instance=product)
@@ -924,9 +936,9 @@ def add_tool(request):
     if request.method == 'POST':
         form = ToolForm(request.POST, request.FILES)
         if form.is_valid():
-            tool = form.save(commit=False)
             if 'photo' in request.FILES:
-                tool.photo = compress_image(request.FILES['photo'], max_size_mb=1)
+                form.cleaned_data['photo'] = compress_image(request.FILES['photo'], max_size_mb=1)
+            tool = form.save(commit=False)
             tool.added_by = request.user
             tool.save()
             return redirect('tools_list')
@@ -974,10 +986,9 @@ def edit_tool(request, tool_id):
     if request.method == 'POST':
         form = ToolForm(request.POST, request.FILES, instance=tool)
         if form.is_valid():
-            instance = form.save(commit=False)
             if 'photo' in request.FILES:
-                instance.photo = compress_image(request.FILES['photo'], max_size_mb=1)
-            instance.save()
+                form.cleaned_data['photo'] = compress_image(request.FILES['photo'], max_size_mb=1)
+            form.save()
             return redirect('tools_list')
     else:
         form = ToolForm(instance=tool)
