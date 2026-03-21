@@ -12,128 +12,129 @@
   {% endif %}
 </div>
 
-<!-- Stat Cards -->
-<div class="grid-stats" style="margin-bottom:24px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-  <div class="stat-card" style="border-top:4px solid #2E7D32;">
-    <div class="stat-number" style="color:#2E7D32;">{{ available }}</div>
-    <div class="stat-label">Available</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+  <div style="background:#fff;border-radius:10px;border-top:3px solid #2E7D32;padding:12px;text-align:center;">
+    <div style="font-size:22px;font-weight:700;color:#2E7D32;">{{ available }}</div>
+    <div style="font-size:11px;color:#5A6A85;margin-top:2px;">Available</div>
   </div>
-  <div class="stat-card" style="border-top:4px solid #E53935;">
-    <div class="stat-number" style="color:#E53935;">{{ in_use }}</div>
-    <div class="stat-label">In Use</div>
+  <div style="background:#fff;border-radius:10px;border-top:3px solid #C62828;padding:12px;text-align:center;">
+    <div style="font-size:22px;font-weight:700;color:#C62828;">{{ in_use }}</div>
+    <div style="font-size:11px;color:#5A6A85;margin-top:2px;">In Use</div>
   </div>
-  <div class="stat-card" style="border-top:4px solid #1A73E8;">
-    <div class="stat-number" style="color:#1A73E8;">{{ total }}</div>
-    <div class="stat-label">Total Tools</div>
+  <div style="background:#fff;border-radius:10px;border-top:3px solid #1A73E8;padding:12px;text-align:center;">
+    <div style="font-size:22px;font-weight:700;color:#1A73E8;">{{ total }}</div>
+    <div style="font-size:11px;color:#5A6A85;margin-top:2px;">Total</div>
   </div>
 </div>
 
-<!-- Search + Filter -->
-<div class="card" style="margin-bottom:20px; padding:16px 20px;">
-  <form method="get" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+<div style="background:#fff;border:1px solid #DDEEFF;border-radius:10px;padding:12px;margin-bottom:14px;">
+  <form method="get">
     <input type="text" name="q" value="{{ query }}" placeholder="Search by name or location..."
-      style="flex:1; min-width:200px; padding:9px 14px; border:1px solid var(--card-border); border-radius:8px; font-size:14px; outline:none;">
-    <select name="status" style="padding:9px 14px; border:1px solid var(--card-border); border-radius:8px; font-size:14px; background:var(--bg-white); outline:none; cursor:pointer;">
-      <option value="" {% if not status %}selected{% endif %}>All Tools</option>
-      <option value="available" {% if status == 'available' %}selected{% endif %}>Available Only</option>
-      <option value="inuse" {% if status == 'inuse' %}selected{% endif %}>In Use Only</option>
-    </select>
-    <button type="submit" class="btn" style="padding:9px 20px;">🔍 Search</button>
-    {% if query or status %}
-    <a href="{% url 'tools_list' %}" class="btn btn-secondary" style="padding:9px 16px;">✕ Clear</a>
-    {% endif %}
+      style="width:100%;border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 12px;font-size:13px;margin-bottom:8px;">
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+      <select name="status" style="border:1px solid #DDEEFF;border-radius:8px;height:38px;padding:0 10px;font-size:13px;background:#fff;">
+        <option value="" {% if not status %}selected{% endif %}>All Tools</option>
+        <option value="available" {% if status == 'available' %}selected{% endif %}>Available</option>
+        <option value="inuse" {% if status == 'inuse' %}selected{% endif %}>In Use</option>
+      </select>
+      <button type="submit" style="background:#1A73E8;color:#fff;border:none;padding:0 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">🔍 Search</button>
+    </div>
   </form>
 </div>
 
-<!-- Tool Grid -->
-{% if tools %}
-<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:20px;">
-  {% for tool in tools %}
-  <div style="background:{% if not tool.is_available %}#FFF5F5{% else %}var(--bg-white){% endif %}; border-radius:12px; border:1px solid {% if not tool.is_available %}#F09595{% else %}var(--card-border){% endif %}; box-shadow:0 1px 4px rgba(0,0,0,0.06); overflow:hidden; display:flex; flex-direction:column; position:relative;">
+<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:12px;">
+{% for tool in tools %}
+<div style="background:#fff;border-radius:12px;overflow:hidden;margin-bottom:0;
+  border:{% if not tool.is_available %}1px solid #F09595{% else %}1px solid #DDEEFF{% endif %};">
 
-    <!-- Availability Ribbon -->
-    <div style="position:absolute; top:10px; right:10px; z-index:1;">
-      {% if tool.is_available %}
-      <span style="background:#2E7D32; color:#fff; font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px;">✓ Available</span>
-      {% else %}
-      <span style="background:#E53935; color:#fff; font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px;">🔒 In Use</span>
-      {% endif %}
+  <!-- Tool photo -->
+  {% if tool.photo %}
+    <div style="position:relative;">
+      <img src="{{ tool.photo.url }}" style="width:100%;height:160px;object-fit:cover;">
+      <span style="position:absolute;top:10px;right:10px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;
+        {% if tool.is_available %}background:#E8F5E9;color:#2E7D32;{% else %}background:#C62828;color:#fff;{% endif %}">
+        {% if tool.is_available %}✓ Available{% else %}🔒 In Use{% endif %}
+      </span>
     </div>
-
-    <!-- Photo -->
-    <div style="height:140px; background:#EBF4FF; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-      {% if tool.photo %}
-      <img src="{{ tool.photo.url }}" alt="{{ tool.name }}" style="width:100%; height:100%; object-fit:cover;">
-      {% else %}
-      <span style="font-size:48px;">🔧</span>
-      {% endif %}
+  {% else %}
+    <div style="width:100%;height:80px;background:{% if tool.is_available %}#EBF4FF{% else %}#FFEBEE{% endif %};display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;">
+      🔧
+      <span style="position:absolute;top:8px;right:10px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+        {% if tool.is_available %}background:#E8F5E9;color:#2E7D32;{% else %}background:#C62828;color:#fff;{% endif %}">
+        {% if tool.is_available %}✓ Available{% else %}🔒 In Use{% endif %}
+      </span>
     </div>
-
-    <!-- Content -->
-    <div style="padding:14px; flex:1; display:flex; flex-direction:column; gap:6px;">
-      <div style="font-weight:700; font-size:15px; color:var(--text-primary);">{{ tool.name }}</div>
-      {% if tool.location %}
-      <div style="font-size:12px; color:var(--text-secondary);">📍 {{ tool.location }}</div>
-      {% endif %}
-      {% if tool.description %}
-      <div style="font-size:12px; color:var(--text-secondary); line-height:1.4;">{{ tool.description|truncatewords:12 }}</div>
-      {% endif %}
-
-      <!-- Locked By Info -->
-      {% if not tool.is_available %}
-      <div style="background:#FFF0F0; border:1px solid #FFCDD2; border-radius:8px; padding:8px 10px; margin-top:4px;">
-        <div style="font-size:12px; font-weight:600; color:#B71C1C;">🔒 Taken by: {{ tool.taken_by.get_full_name|default:tool.taken_by.username }}</div>
-        <div style="font-size:11px; color:#E53935; margin-top:2px;">Since: {{ tool.taken_at|date:"M d, Y" }}</div>
-      </div>
-      {% endif %}
-
-      <!-- Action Buttons -->
-      <div style="margin-top:10px;">
-        {% if tool.is_available %}
-        <form method="post" action="{% url 'take_tool' tool.id %}">
-          {% csrf_token %}
-          <button type="submit" style="width:100%; padding:8px; background:#1A73E8; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">🛠️ Take Tool</button>
-        </form>
-        {% elif tool.taken_by == user %}
-        <form method="post" action="{% url 'return_tool' tool.id %}">
-          {% csrf_token %}
-          <button type="submit" style="width:100%; padding:8px; background:#2E7D32; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">↩️ Return Tool</button>
-        </form>
-        {% elif user.role == 'admin' %}
-        <div style="display:flex; gap:6px;">
-          <form method="post" action="{% url 'return_tool' tool.id %}" style="flex:1;">
-            {% csrf_token %}
-            <button type="submit" style="width:100%; padding:8px; background:#F57C00; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">↩️ Force Return</button>
-          </form>
-        </div>
-        {% else %}
-        <button disabled style="width:100%; padding:8px; background:#e0e0e0; color:#777; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:not-allowed;">⛔ Not Available</button>
-        {% endif %}
-      </div>
-
-      <!-- Admin-only Edit / Delete -->
-      {% if user.role == 'admin' %}
-      <div style="display:flex; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--card-border);">
-        <a href="{% url 'edit_tool' tool.id %}" class="btn btn-sm btn-secondary" style="flex:1; text-align:center; font-size:12px;">✏️ Edit</a>
-        <a href="{% url 'delete_tool' tool.id %}" class="btn btn-sm btn-danger" style="font-size:12px;"
-          onclick="return confirm('Delete {{ tool.name }}?')">🗑️</a>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-  {% endfor %}
-</div>
-{% else %}
-<div class="card" style="text-align:center; padding:60px 20px; color:var(--text-secondary);">
-  <div style="font-size:48px; margin-bottom:16px;">🔧</div>
-  <div style="font-size:16px; font-weight:600; margin-bottom:8px;">No tools found</div>
-  {% if query or status %}
-  <div style="font-size:13px; margin-bottom:16px;">Try adjusting your search or filter.</div>
-  <a href="{% url 'tools_list' %}" class="btn btn-secondary">Clear Filters</a>
-  {% elif user.role == 'admin' %}
-  <a href="{% url 'add_tool' %}" class="btn">＋ Add First Tool</a>
   {% endif %}
+
+  <div style="padding:14px;">
+    <!-- Name + Location -->
+    <div style="font-size:16px;font-weight:600;color:#1A1A2E;margin-bottom:4px;">{{ tool.name }}</div>
+    {% if tool.location %}
+    <div style="font-size:12px;color:#5A6A85;margin-bottom:10px;">📍 {{ tool.location }}</div>
+    {% endif %}
+    {% if tool.description %}
+    <div style="font-size:12px;color:#5A6A85;margin-bottom:10px;">{{ tool.description }}</div>
+    {% endif %}
+
+    <!-- Locked by info -->
+    {% if not tool.is_available %}
+    <div style="background:#FFF3E0;border:1px solid #FFE0B2;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+      <div style="font-size:12px;color:#E65100;font-weight:500;">🔒 Taken by: {{ tool.taken_by.get_full_name|default:tool.taken_by.username }}</div>
+      <div style="font-size:11px;color:#F57C00;margin-top:2px;">Since: {{ tool.taken_at|date:"M d, Y" }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Action button -->
+    {% if tool.is_available %}
+      <form method="post" action="{% url 'take_tool' tool.id %}">
+        {% csrf_token %}
+        <button type="submit" style="width:100%;padding:10px;border-radius:8px;background:#1A73E8;color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;">
+          Take Tool
+        </button>
+      </form>
+    {% elif tool.taken_by == user %}
+      <form method="post" action="{% url 'return_tool' tool.id %}">
+        {% csrf_token %}
+        <button type="submit" style="width:100%;padding:10px;border-radius:8px;background:#E8F5E9;color:#2E7D32;border:1px solid #C8E6C9;font-size:13px;font-weight:500;cursor:pointer;">
+          Return Tool
+        </button>
+      </form>
+    {% else %}
+      {% if user.role == 'admin' %}
+        <form method="post" action="{% url 'return_tool' tool.id %}" style="margin-bottom: 8px;">
+          {% csrf_token %}
+          <button type="submit" style="width:100%;padding:10px;border-radius:8px;background:#F57C00;color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;">
+            Force Return
+          </button>
+        </form>
+      {% endif %}
+      <button disabled style="width:100%;padding:10px;border-radius:8px;background:#F0F7FF;color:#B4B2A9;border:none;font-size:13px;cursor:not-allowed;">
+        Not Available
+      </button>
+    {% endif %}
+
+    <!-- Admin only edit/delete -->
+    {% if user.role == 'admin' %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+      <a href="{% url 'edit_tool' tool.id %}"
+        style="text-align:center;padding:8px;border-radius:8px;background:#EBF4FF;color:#1565C0;font-size:12px;font-weight:500;text-decoration:none;">
+        ✏️ Edit
+      </a>
+      <a href="{% url 'delete_tool' tool.id %}"
+        style="text-align:center;padding:8px;border-radius:8px;background:#FFEBEE;color:#C62828;font-size:12px;font-weight:500;text-decoration:none;">
+        🗑 Delete
+      </a>
+    </div>
+    {% endif %}
+  </div>
 </div>
-{% endif %}
+{% empty %}
+<div style="grid-column: 1 / -1; text-align:center;padding:50px 20px;background:#fff;border-radius:12px;border:1px solid #DDEEFF;">
+  <div style="font-size:48px;margin-bottom:12px;">🔧</div>
+  <div style="font-size:15px;font-weight:600;color:#1A1A2E;">No tools yet</div>
+  <div style="font-size:13px;color:#5A6A85;margin-top:6px;">Add your first tool.</div>
+</div>
+{% endfor %}
+</div>
 
 {% endblock %}
