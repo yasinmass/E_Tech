@@ -1177,15 +1177,24 @@ def test_compression(request):
     from django.http import JsonResponse
     from .utils import compress_image
     import io
+    import random
     from PIL import Image
 
-    # Create a test image of exactly 3MB
-    img = Image.new('RGB', (3000, 2000), color='red')
+    # Create a large noisy image (~3-5MB as JPEG) to properly test compression
+    # A single-color image compresses to nearly nothing, so we use random noise
+    width, height = 3000, 2000
+    img = Image.new('RGB', (width, height))
+    pixels = img.load()
+    for y in range(height):
+        for x in range(width):
+            pixels[x, y] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
     output = io.BytesIO()
     img.save(output, format='JPEG', quality=95)
-    output.seek(0)
 
+    # Get actual size BEFORE seek(0)
     original_size = output.tell()
+    output.seek(0)
 
     # Create a fake uploaded file
     from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -1201,4 +1210,7 @@ def test_compression(request):
         'original_size_mb': round(original_size / 1024 / 1024, 2),
         'compressed_size_mb': round(compressed_size / 1024 / 1024, 2),
         'compression_worked': compressed_size < original_size,
+        'reduction_pct': round((1 - compressed_size / original_size) * 100, 1) if original_size > 0 else 0,
     })
+
+
