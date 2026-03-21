@@ -203,7 +203,12 @@ class ProductForm(forms.ModelForm):
             'quantity': 'Quantity',
             'size': 'Size (e.g. 2 inch x 10ft)',
             'place': 'Storage Place / Location',
-            'photo': 'Product Photo',
+            'photo': 'Image URL (paste any image link)',
+        }
+        widgets = {
+            'photo': forms.URLInput(attrs={
+                'placeholder': 'https://example.com/image.jpg'
+            }),
         }
 
 class ToolForm(forms.ModelForm):
