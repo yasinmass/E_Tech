@@ -678,21 +678,67 @@ def delete_worker(request, worker_id):
 def worker_detail(request, worker_id):
     worker = get_object_or_404(User, id=worker_id, role='worker')
     profile, created = WorkerProfile.objects.get_or_create(user=worker)
-    attendances = Attendance.objects.filter(worker=worker).order_by('-date')[:30]
-    total_slots = Attendance.objects.filter(worker=worker, is_present=True).count()
-    present_days = total_slots // 2
-    unique_dates = Attendance.objects.filter(worker=worker).values('date').distinct().count()
-    absent_days = max(0, unique_dates - present_days)
-    attendance_stats = {
-        'present': present_days,
-        'absent': absent_days,
-        'total': unique_dates,
-    }
+    from datetime import date, timedelta
+    records = Attendance.objects.filter(worker=worker).order_by('date')
+    
+    present_slots = records.filter(is_present=True).count()
+    absent_slots = records.filter(is_present=False).count()
+    total_slots = present_slots + absent_slots
+    attendance_pct = round((present_slots / total_slots * 100), 1) if total_slots > 0 else 0
+
+    day_rows = []
+    if records.exists():
+        first_date = records.first().date
+        today = date.today()
+        current = first_date
+        while current <= today:
+            day_records = records.filter(date=current)
+            
+            def get_slot_info(slot_name):
+                r = day_records.filter(slot=slot_name).first()
+                if not r:
+                    return {'sym': 'NT', 'color': '#BDBDBD', 'is_p': False}
+                sym = 'P' if r.is_present else 'A'
+                color = '#2E7D32' if r.is_present else '#C62828'
+                return {'sym': sym, 'color': color, 'is_p': r.is_present}
+            
+            e = get_slot_info('early')
+            m = get_slot_info('morning')
+            a = get_slot_info('afternoon')
+            dp = sum([1 for s in [e, m, a] if s['is_p']])
+
+            if dp == 3:
+                badge = 'badge-done'
+            elif dp >= 1:
+                badge = 'badge-pending'
+            else:
+                badge = 'badge-absent'
+
+            day_rows.append({
+                'date': current.strftime('%b %d, %Y'),
+                'day_name': current.strftime('%a'),
+                'early': e['sym'],
+                'early_color': e['color'],
+                'morning': m['sym'],
+                'morning_color': m['color'],
+                'afternoon': a['sym'],
+                'afternoon_color': a['color'],
+                'day_present': dp,
+                'day_badge': badge,
+                'is_today': current == today,
+            })
+            current += timedelta(days=1)
+    
+    day_rows.reverse()
+
     return render(request, 'admin_worker_detail.html', {
         'worker': worker,
         'profile': profile,
-        'attendances': attendances,
-        'attendance_stats': attendance_stats,
+        'present_slots': present_slots,
+        'absent_slots': absent_slots,
+        'total_slots': total_slots,
+        'attendance_pct': attendance_pct,
+        'day_rows': day_rows,
     })
 
 
