@@ -2,97 +2,224 @@
 {% block title %}Sites - E-Tech Builders{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width: 768px) {
+  .desktop-table { display: none !important; }
+  .mobile-cards { display: block !important; }
+}
+</style>
+
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
   <div>
     <div style="font-size:20px;font-weight:600;color:#1A1A2E;">🏗️ Sites</div>
-    <div style="font-size:13px;color:#5A6A85;margin-top:2px;">Tap a site card to view full details.</div>
+    <div style="font-size:13px;color:#5A6A85;margin-top:2px;">Tap a site to view full details.</div>
   </div>
   <a href="{% url 'add_site' %}" style="background:#1A73E8;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;">+ Add Site</a>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
-{% for site in sites %}
-<div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;cursor:pointer;"
-  onclick="openSiteModal(this)"
-  data-name="{{ site.name }}"
-  data-owner="{{ site.owner_name }}"
-  data-phone="{{ site.owner_phone }}"
-  data-address="{{ site.address }}"
-  data-status="{{ site.status }}"
-  data-location="{{ site.location|default:'' }}"
-  data-photo="{% if site.site_photo %}{{ site.site_photo.url }}{% endif %}"
-  data-owner-photo="{% if site.owner_photo %}{{ site.owner_photo.url }}{% endif %}"
-  data-edit-url="{% url 'edit_site' site.id %}"
-  data-delete-url="{% url 'delete_site' site.id %}"
-  data-task-url="{% url 'assign_task_for_site' %}"
-  data-site-id="{{ site.id }}"
-  data-site-name="{{ site.name }}"
-  data-track-url="{% url 'site_tasks' site.id %}">
-
-  <!-- Site photo or placeholder -->
-  {% if site.site_photo %}
-    <img src="{{ site.site_photo.url }}" style="width:100%;height:120px;object-fit:cover;">
-  {% else %}
-    <div style="width:100%;height:80px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:36px;">🏗️</div>
-  {% endif %}
-
-  <div style="padding:14px;">
-    <!-- Name + Status -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div style="font-size:15px;font-weight:600;color:#1A1A2E;">{{ site.name }}</div>
-      <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
-        {% if site.status == 'Completed' %}background:#E8F5E9;color:#2E7D32;
-        {% elif site.status == 'In Progress' %}background:#E3F2FD;color:#1565C0;
-        {% else %}background:#FFF8E1;color:#F57C00;{% endif %}">
-        {{ site.status }}
-      </span>
-    </div>
-
-    <!-- Info -->
-    <div style="font-size:12px;color:#5A6A85;margin-bottom:4px;">👤 {{ site.owner_name }}</div>
-    <div style="font-size:12px;color:#5A6A85;margin-bottom:4px;">📞 {{ site.owner_phone }}</div>
-    <div style="font-size:12px;color:#5A6A85;margin-bottom:10px;">📍 {{ site.address }}</div>
-
-    <!-- Task progress -->
-    {% if site.total_tasks > 0 %}
-    <div style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#5A6A85;margin-bottom:3px;">
-        <span>{{ site.done_tasks }}/{{ site.total_tasks }} tasks done</span>
-        <span style="font-weight:600;color:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1565C0{% else %}#F57C00{% endif %};">{{ site.task_pct }}%</span>
-      </div>
-      <div style="height:5px;background:#EBF4FF;border-radius:3px;overflow:hidden;">
-        <div style="height:100%;border-radius:3px;width:{{ site.task_pct }}%;background:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1A73E8{% else %}#F57C00{% endif %};"></div>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Action buttons -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;" onclick="event.stopPropagation()">
-      <a href="{% url 'edit_site' site.id %}"
-        style="text-align:center;padding:8px;border-radius:8px;background:#EBF4FF;color:#1565C0;font-size:11px;font-weight:500;text-decoration:none;">
-        ✏️ Edit
-      </a>
-      <button
-        data-site-id="{{ site.id }}"
-        data-site-name="{{ site.name }}"
-        onclick="openTaskModal(this)"
-        style="padding:8px;border-radius:8px;background:#EDE7F6;color:#534AB7;font-size:11px;font-weight:500;border:none;cursor:pointer;">
-        📋 Task
-      </button>
-      <a href="{% url 'site_tasks' site.id %}"
-        style="text-align:center;padding:8px;border-radius:8px;background:#E8F5E9;color:#2E7D32;font-size:11px;font-weight:500;text-decoration:none;">
-        📌 Track
-      </a>
+<!-- Show on desktop only -->
+<div class="desktop-table" style="display:block;">
+  <div class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th>Owner Name</th>
+            <th>Owner Phone</th>
+            <th>Address</th>
+            <th>Task Progress</th>
+            <th style="min-width:340px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if sites %}
+          {% for site in sites %}
+          <tr onclick="openSiteModal(this)" style="cursor:pointer;"
+            data-name="{{ site.name }}"
+            data-owner="{{ site.owner_name }}"
+            data-phone="{{ site.owner_phone }}"
+            data-address="{{ site.address }}"
+            data-status="{{ site.status }}"
+            data-location="{{ site.location|default:'' }}"
+            data-photo="{% if site.site_photo %}{{ site.site_photo.url }}{% endif %}"
+            data-owner-photo="{% if site.owner_photo %}{{ site.owner_photo.url }}{% endif %}"
+            data-edit-url="{% url 'edit_site' site.id %}"
+            data-delete-url="{% url 'delete_site' site.id %}"
+            data-task-url="{% url 'assign_task_for_site' %}"
+            data-site-id="{{ site.id }}"
+            data-site-name="{{ site.name }}"
+            data-track-url="{% url 'site_tasks' site.id %}">
+            <td>
+              <div style="display:flex; align-items:center; gap:10px;">
+                {% if site.site_photo %}
+                <img src="{{ site.site_photo.url }}" alt="{{ site.name }}"
+                  style="width:40px; height:40px; object-fit:cover; border-radius:8px; flex-shrink:0;">
+                {% else %}
+                <div style="width:40px; height:40px; background:#E3F2FD; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">🏗️</div>
+                {% endif %}
+                {% if site.location %}
+                <a href="{{ site.location }}" target="_blank" style="color:#1A73E8;font-weight:600;">{{ site.name }}</a>
+                {% else %}
+                <strong>{{ site.name }}</strong>
+                {% endif %}
+              </div>
+            </td>
+            <td>{{ site.owner_name|default:"—" }}</td>
+            <td style="color:var(--text-secondary);">{{ site.owner_phone|default:"—" }}</td>
+            <td style="color:var(--text-secondary); font-size:13px;">{{ site.address|default:"—" }}</td>
+            <td>
+              {% if site.total_tasks == 0 %}
+                <span style="font-size:12px;color:#B4B2A9;">No tasks yet</span>
+              {% else %}
+                <div style="margin-bottom:5px;">
+                  <div style="display:flex;justify-content:space-between;font-size:11px;color:#5A6A85;margin-bottom:3px;">
+                    <span>{{ site.done_tasks }}/{{ site.total_tasks }} done</span>
+                    <span style="font-weight:600;color:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1565C0{% else %}#F57C00{% endif %};">{{ site.task_pct }}%</span>
+                  </div>
+                  <div style="height:6px;background:#EBF4FF;border-radius:3px;overflow:hidden;width:140px;">
+                    <div style="height:100%;border-radius:3px;width:{{ site.task_pct }}%;background:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1A73E8{% else %}#F57C00{% endif %};"></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                  {% if site.pending_tasks %}<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#FFF8E1;color:#F57C00;">{{ site.pending_tasks }} Pending</span>{% endif %}
+                  {% if site.inprogress_tasks %}<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E3F2FD;color:#1565C0;">{{ site.inprogress_tasks }} In Progress</span>{% endif %}
+                  {% if site.done_tasks %}<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E8F5E9;color:#2E7D32;">{{ site.done_tasks }} Done</span>{% endif %}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
+                <a href="{% url 'edit_site' site.id %}"
+                  onclick="event.stopPropagation()"
+                  style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#F1EFE8;color:#444441;text-decoration:none;white-space:nowrap;">
+                  ✏️ Edit
+                </a>
+                <button
+                  data-site-id="{{ site.id }}"
+                  data-site-name="{{ site.name }}"
+                  onclick="event.stopPropagation(); openTaskModal(this)"
+                  style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#534AB7;color:#fff;border:none;cursor:pointer;white-space:nowrap;">
+                  📋 Assign Task
+                </button>
+                <a href="{% url 'site_tasks' site.id %}"
+                  onclick="event.stopPropagation()"
+                  style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#E3F2FD;color:#1565C0;text-decoration:none;white-space:nowrap;">
+                  📌 Track Tasks
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center; color:var(--text-secondary); padding:40px;">
+              No sites added yet. <a href="{% url 'add_site' %}" style="color:var(--primary-color);">Add your first site →</a>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
-{% empty %}
-<div style="text-align:center;padding:60px 20px;background:#fff;border-radius:12px;border:1px solid #DDEEFF;grid-column:span 3;">
-  <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
-  <div style="font-size:16px;font-weight:600;color:#1A1A2E;">No sites yet</div>
-  <div style="font-size:13px;color:#5A6A85;margin-top:6px;">Add your first construction site.</div>
-</div>
-{% endfor %}
+
+<!-- Show on mobile only -->
+<div class="mobile-cards" style="display:none;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
+  {% for site in sites %}
+  <div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;cursor:pointer;"
+    onclick="openSiteModal(this)"
+    data-name="{{ site.name }}"
+    data-owner="{{ site.owner_name }}"
+    data-phone="{{ site.owner_phone }}"
+    data-address="{{ site.address }}"
+    data-status="{{ site.status }}"
+    data-location="{{ site.location|default:'' }}"
+    data-photo="{% if site.site_photo %}{{ site.site_photo.url }}{% endif %}"
+    data-owner-photo="{% if site.owner_photo %}{{ site.owner_photo.url }}{% endif %}"
+    data-edit-url="{% url 'edit_site' site.id %}"
+    data-delete-url="{% url 'delete_site' site.id %}"
+    data-task-url="{% url 'assign_task_for_site' %}"
+    data-site-id="{{ site.id }}"
+    data-site-name="{{ site.name }}"
+    data-track-url="{% url 'site_tasks' site.id %}">
+
+    <!-- Top photos section -->
+    <div style="position:relative;height:140px;background:#EBF4FF;">
+      {% if site.site_photo %}
+        <img src="{{ site.site_photo.url }}"
+          style="width:100%;height:140px;object-fit:cover;">
+      {% else %}
+        <div style="width:100%;height:140px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:48px;">🏗️</div>
+      {% endif %}
+
+      <!-- Owner photo overlaid bottom left -->
+      {% if site.owner_photo %}
+        <img src="{{ site.owner_photo.url }}"
+          style="position:absolute;bottom:-20px;left:14px;width:52px;height:52px;border-radius:50%;object-fit:cover;border:3px solid #fff;">
+      {% endif %}
+    </div>
+
+    <!-- Extra padding top if owner photo exists -->
+    <div style="padding:{% if site.owner_photo %}28px{% else %}14px{% endif %} 14px 14px;">
+      <!-- Name + Status -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:15px;font-weight:600;color:#1A1A2E;">{{ site.name }}</div>
+        <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+          {% if site.status == 'Completed' %}background:#E8F5E9;color:#2E7D32;
+          {% elif site.status == 'In Progress' %}background:#E3F2FD;color:#1565C0;
+          {% else %}background:#FFF8E1;color:#F57C00;{% endif %}">
+          {{ site.status }}
+        </span>
+      </div>
+
+      <!-- Info -->
+      <div style="font-size:12px;color:#5A6A85;margin-bottom:4px;">👤 {{ site.owner_name }}</div>
+      <div style="font-size:12px;color:#5A6A85;margin-bottom:4px;">📞 {{ site.owner_phone }}</div>
+      <div style="font-size:12px;color:#5A6A85;margin-bottom:10px;">📍 {{ site.address }}</div>
+
+      <!-- Task progress -->
+      {% if site.total_tasks > 0 %}
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#5A6A85;margin-bottom:3px;">
+          <span>{{ site.done_tasks }}/{{ site.total_tasks }} tasks done</span>
+          <span style="font-weight:600;color:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1565C0{% else %}#F57C00{% endif %};">{{ site.task_pct }}%</span>
+        </div>
+        <div style="height:5px;background:#EBF4FF;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;border-radius:3px;width:{{ site.task_pct }}%;background:{% if site.task_pct == 100 %}#2E7D32{% elif site.task_pct >= 50 %}#1A73E8{% else %}#F57C00{% endif %};"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Action buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;" onclick="event.stopPropagation()">
+        <a href="{% url 'edit_site' site.id %}"
+          style="text-align:center;padding:8px;border-radius:8px;background:#EBF4FF;color:#1565C0;font-size:11px;font-weight:500;text-decoration:none;">
+          ✏️ Edit
+        </a>
+        <button
+          data-site-id="{{ site.id }}"
+          data-site-name="{{ site.name }}"
+          onclick="openTaskModal(this)"
+          style="padding:8px;border-radius:8px;background:#EDE7F6;color:#534AB7;font-size:11px;font-weight:500;border:none;cursor:pointer;">
+          📋 Task
+        </button>
+        <a href="{% url 'site_tasks' site.id %}"
+          style="text-align:center;padding:8px;border-radius:8px;background:#E8F5E9;color:#2E7D32;font-size:11px;font-weight:500;text-decoration:none;">
+          📌 Track
+        </a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:60px 20px;background:#fff;border-radius:12px;border:1px solid #DDEEFF;grid-column:span 3;">
+    <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
+    <div style="font-size:16px;font-weight:600;color:#1A1A2E;">No sites yet</div>
+    <div style="font-size:13px;color:#5A6A85;margin-top:6px;">Add your first construction site.</div>
+  </div>
+  {% endfor %}
+  </div>
 </div>
 
 <!-- Site Detail Modal - slides up from bottom on mobile -->
@@ -144,8 +271,6 @@
     </div>
   </div>
 </div>
-
-<!-- Task assignment modal placeholder - add task_modal.html template if needed -->
 
 <script>
 function openSiteModal(row) {
