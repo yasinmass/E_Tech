@@ -211,11 +211,8 @@ def upload_bill(request):
         if form.is_valid():
             instance = form.save(commit=False)
             instance.uploaded_by = request.user
-            # Compress AFTER save(commit=False) - assign directly to instance
-            if 'photo' in request.FILES:
-                compressed = compress_image(request.FILES['photo'], max_size_mb=2)
-                instance.photo = compressed
-                print(f"DEBUG: Compressed to {compressed.size/1024/1024:.2f}MB")
+            if 'image' in request.FILES:
+                instance.image = compress_image(request.FILES['image'], max_size_mb=2)
             instance.save()
             log_activity(request.user, f"Uploaded bill: ₹{instance.amount} — {instance.site.name}", 'bill')
             return redirect('admin_dashboard')
@@ -315,8 +312,8 @@ def worker_upload_bill(request):
         form = BillForm(request.POST, request.FILES)
         if form.is_valid():
             bill = form.save(commit=False)
-            if 'photo' in request.FILES:
-                bill.photo = compress_image(request.FILES['photo'], max_size_mb=2)
+            if 'image' in request.FILES:
+                bill.image = compress_image(request.FILES['image'], max_size_mb=2)
             bill.uploaded_by = request.user
             bill.save()
             return redirect('worker_dashboard')
@@ -748,17 +745,11 @@ def delete_task(request, task_id):
 def edit_bill(request, bill_id):
     bill = get_object_or_404(Bill, id=bill_id)
     if request.method == 'POST':
-        print(f"DEBUG edit_bill: request.FILES keys = {list(request.FILES.keys())}")
-        print(f"DEBUG edit_bill: request.POST keys = {list(request.POST.keys())}")
         form = BillForm(request.POST, request.FILES, instance=bill)
         if form.is_valid():
-            print(f"DEBUG edit_bill: form.cleaned_data keys = {list(form.cleaned_data.keys())}")
             instance = form.save(commit=False)
-            if 'photo' in request.FILES:
-                print("DEBUG edit_bill: photo found in FILES")
-                instance.photo = compress_image(request.FILES['photo'], max_size_mb=2)
-            else:
-                print(f"DEBUG edit_bill: photo NOT in FILES, available keys: {list(request.FILES.keys())}")
+            if 'image' in request.FILES:
+                instance.image = compress_image(request.FILES['image'], max_size_mb=2)
             instance.save()
             messages.success(request, 'Bill updated successfully.')
             return redirect('admin_all_bills')
