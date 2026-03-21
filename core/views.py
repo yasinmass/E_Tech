@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 import json
 from datetime import date
+from django.db.models import Sum
 from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product, Tool, ActivityLog
 from .forms import (
     AddWorkerForm, CustomerCreationForm, WorkerEditForm,
@@ -423,7 +424,7 @@ def admin_updates(request):
 
 @role_required('admin')
 def admin_all_bills(request):
-    bills = Bill.objects.select_related('site', 'uploaded_by').all().order_by('-created_at')
+    bills = Bill.objects.select_related('site', 'uploaded_by').all().order_by('-date')
     sites = Site.objects.all()
 
     # Filters
@@ -435,14 +436,14 @@ def admin_all_bills(request):
     if site_filter:
         bills = bills.filter(site__id=site_filter)
     if date_from:
-        bills = bills.filter(created_at__date__gte=date_from)
+        bills = bills.filter(date__gte=date_from)
     if date_to:
-        bills = bills.filter(created_at__date__lte=date_to)
+        bills = bills.filter(date__lte=date_to)
     if search:
-        bills = bills.filter(title__icontains=search)
+        bills = bills.filter(description__icontains=search)
 
     total_amount = bills.aggregate(
-        total=models.Sum('amount')
+        total=Sum('amount')
     )['total'] or 0
 
     return render(request, 'admin_bills.html', {
@@ -534,21 +535,21 @@ def worker_my_updates(request):
 
 @role_required('worker')
 def worker_my_bills(request):
-    bills = Bill.objects.filter(uploaded_by=request.user).order_by('-created_at')
+    bills = Bill.objects.filter(uploaded_by=request.user).order_by('-date')
 
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
     search = request.GET.get('search', '')
 
     if date_from:
-        bills = bills.filter(created_at__date__gte=date_from)
+        bills = bills.filter(date__gte=date_from)
     if date_to:
-        bills = bills.filter(created_at__date__lte=date_to)
+        bills = bills.filter(date__lte=date_to)
     if search:
-        bills = bills.filter(title__icontains=search)
+        bills = bills.filter(description__icontains=search)
 
     total_amount = bills.aggregate(
-        total=models.Sum('amount')
+        total=Sum('amount')
     )['total'] or 0
 
     return render(request, 'worker_bills.html', {
