@@ -42,67 +42,91 @@
 {% if products %}
 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:20px;">
   {% for product in products %}
-  <div style="background:var(--bg-white); border-radius:12px; border:1px solid var(--card-border); box-shadow:0 1px 4px rgba(0,0,0,0.06); overflow:hidden; display:flex; flex-direction:column; position:relative;">
+  <div style="background:#fff;border:1px solid #DDEEFF;border-radius:14px;overflow:hidden;">
 
-    {% if product.is_low_stock %}
-    <div style="position:absolute; top:10px; right:10px; background:#E53935; color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; z-index:1;">LOW STOCK</div>
-    {% endif %}
-
-    <!-- Photo -->
-    <div style="width:100%;height:110px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:36px;">
-      📦
-    </div>
-
-    <!-- Content -->
-    <div style="padding:14px; flex:1; display:flex; flex-direction:column; gap:6px;">
-      <div style="font-weight:700; font-size:15px; color:var(--text-primary);">{{ product.name }}</div>
-      {% if product.size %}
-      <div style="font-size:12px; color:var(--text-secondary);">{{ product.size }}</div>
-      {% endif %}
-      {% if product.place %}
-      <div style="font-size:12px; color:var(--text-secondary);">📍 {{ product.place }}</div>
-      {% endif %}
-
-      <!-- Quantity Badge -->
-      <div style="margin-top:4px;">
-        {% if product.quantity > 5 %}
-        <span style="background:#E8F5E9; color:#2E7D32; font-weight:700; font-size:13px; padding:4px 12px; border-radius:20px; border:1px solid #A5D6A7;">
-          Qty: {{ product.quantity }}
-        </span>
-        {% else %}
-        <span style="background:#FFEBEE; color:#E53935; font-weight:700; font-size:13px; padding:4px 12px; border-radius:20px; border:1px solid #FFCDD2;">
-          Qty: {{ product.quantity }}
-        </span>
+    <!-- Top section: Initial + Name + Size + Place -->
+    <div style="padding:16px 16px 12px;border-bottom:1px solid #F0F7FF;display:flex;align-items:flex-start;gap:12px;">
+      <div style="width:48px;height:48px;border-radius:10px;
+        background:{% cycle '#EBF4FF' '#E8F5E9' '#FFF8E1' '#F3E5F5' '#E3F2FD' %};
+        display:flex;align-items:center;justify-content:center;
+        font-size:22px;font-weight:700;color:#1A73E8;flex-shrink:0;">
+        {{ product.name|first|upper }}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:15px;font-weight:600;color:#1A1A2E;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ product.name }}
+        </div>
+        {% if product.size %}
+        <div style="font-size:12px;color:#5A6A85;">{{ product.size }}</div>
+        {% endif %}
+        {% if product.place %}
+        <div style="font-size:11px;color:#5A6A85;margin-top:3px;">📍 {{ product.place }}</div>
         {% endif %}
       </div>
+    </div>
 
-      <!-- Add / Remove Stock Forms -->
-      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center;">
-        <form method="post" action="{% url 'update_product_qty' product.id %}" style="display:flex; gap:4px; align-items:center;">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add">
-          <input type="number" name="qty" value="1" min="1"
-            style="width:46px; padding:4px 6px; border:1px solid var(--card-border); border-radius:6px; font-size:12px; text-align:center;">
-          <button type="submit" class="btn btn-sm" style="background:#2E7D32; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer;">+</button>
-        </form>
-        <form method="post" action="{% url 'update_product_qty' product.id %}" style="display:flex; gap:4px; align-items:center;">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="remove">
-          <input type="number" name="qty" value="1" min="1"
-            style="width:46px; padding:4px 6px; border:1px solid var(--card-border); border-radius:6px; font-size:12px; text-align:center;">
-          <button type="submit" class="btn btn-sm" style="background:#F57C00; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer;">−</button>
-        </form>
+    <!-- Quantity section -->
+    <div style="padding:12px 16px;background:#F8FBFF;border-bottom:1px solid #F0F7FF;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">In Stock</div>
+        <div style="font-size:18px;font-weight:700;
+          color:{% if product.quantity > 10 %}#2E7D32{% elif product.quantity > 5 %}#F57C00{% else %}#C62828{% endif %};">
+          {{ product.quantity }} units
+        </div>
       </div>
-
-      <!-- Admin-only actions -->
-      {% if user.role == 'admin' %}
-      <div style="display:flex; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--card-border);">
-        <a href="{% url 'edit_product' product.id %}" class="btn btn-sm btn-secondary" style="flex:1; text-align:center; font-size:12px;">✏️ Edit</a>
-        <a href="{% url 'delete_product' product.id %}" class="btn btn-sm btn-danger" style="font-size:12px;"
-          onclick="return confirm('Delete {{ product.name }}?')">🗑️</a>
-      </div>
+      {% if product.quantity <= 5 %}
+        <span style="background:#FFEBEE;color:#C62828;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;">⚠ Low Stock</span>
+      {% elif product.quantity <= 10 %}
+        <span style="background:#FFF8E1;color:#F57C00;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;">⚡ Medium</span>
+      {% else %}
+        <span style="background:#E8F5E9;color:#2E7D32;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;">✓ Available</span>
       {% endif %}
     </div>
+
+    <!-- Add/Remove controls -->
+    <div style="padding:12px 16px;display:flex;align-items:center;gap:8px;">
+      <input type="number" value="1" min="1"
+        style="width:50px;height:34px;border:1px solid #DDEEFF;border-radius:8px;text-align:center;font-size:13px;font-weight:500;"
+        id="qty-add-{{ product.id }}">
+      <form method="post" action="{% url 'update_product_qty' product.id %}" style="flex:1;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <input type="hidden" name="qty" value="1" id="hidden-add-{{ product.id }}">
+        <button type="submit"
+          onclick="document.getElementById('hidden-add-{{ product.id }}').value=document.getElementById('qty-add-{{ product.id }}').value"
+          style="width:100%;height:34px;border-radius:8px;background:#E8F5E9;color:#2E7D32;border:none;font-size:12px;font-weight:600;cursor:pointer;">
+          + Add
+        </button>
+      </form>
+      <input type="number" value="1" min="1"
+        style="width:50px;height:34px;border:1px solid #DDEEFF;border-radius:8px;text-align:center;font-size:13px;font-weight:500;"
+        id="qty-remove-{{ product.id }}">
+      <form method="post" action="{% url 'update_product_qty' product.id %}" style="flex:1;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="qty" value="1" id="hidden-remove-{{ product.id }}">
+        <button type="submit"
+          onclick="document.getElementById('hidden-remove-{{ product.id }}').value=document.getElementById('qty-remove-{{ product.id }}').value"
+          style="width:100%;height:34px;border-radius:8px;background:#FFF8E1;color:#F57C00;border:none;font-size:12px;font-weight:600;cursor:pointer;">
+          − Remove
+        </button>
+      </form>
+    </div>
+
+    <!-- Footer actions -->
+    <div style="padding:10px 16px;display:flex;gap:8px;border-top:1px solid #F0F7FF;">
+      {% if user.role == 'admin' %}
+      <a href="{% url 'edit_product' product.id %}"
+        style="flex:1;text-align:center;padding:8px;border-radius:8px;background:#EBF4FF;color:#1565C0;font-size:12px;font-weight:500;text-decoration:none;">
+        ✏️ Edit
+      </a>
+      <a href="{% url 'delete_product' product.id %}"
+        style="width:36px;text-align:center;padding:8px;border-radius:8px;background:#FFEBEE;color:#C62828;font-size:12px;text-decoration:none;">
+        🗑
+      </a>
+      {% endif %}
+    </div>
+
   </div>
   {% endfor %}
 </div>
