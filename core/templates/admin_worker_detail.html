@@ -70,37 +70,110 @@
   
   <div style="display:flex; flex-direction:column; gap:20px;">
     <!-- Attendance Stats Option -->
-    <div class="card">
-        <h4 style="margin:0 0 16px; font-size:16px;">Attendance Overview</h4>
-        <div style="display:flex; gap:0; background:#F0F7FF; border-radius:10px; border:1px solid #DDEEFF; overflow:hidden;">
-            <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
-                <div style="font-size:24px; font-weight:700; color:#2E7D32;">{{ attendance_stats.present }}</div>
-                <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Full Days</div>
+    <!-- Attendance Stats Option -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:#fff;border-radius:12px;border-top:3px solid #2E7D32;padding:14px;text-align:center;">
+        <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Present</div>
+        <div style="font-size:26px;font-weight:700;color:#2E7D32;">{{ present_slots }}</div>
+        <div style="font-size:11px;color:#5A6A85;margin-top:2px;">slots</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border-top:3px solid #C62828;padding:14px;text-align:center;">
+        <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Absent</div>
+        <div style="font-size:26px;font-weight:700;color:#C62828;">{{ absent_slots }}</div>
+        <div style="font-size:11px;color:#5A6A85;margin-top:2px;">slots</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border-top:3px solid #1A73E8;padding:14px;text-align:center;">
+        <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total</div>
+        <div style="font-size:26px;font-weight:700;color:#1A73E8;">{{ total_slots }}</div>
+        <div style="font-size:11px;color:#5A6A85;margin-top:2px;">slots</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border-top:3px solid #F57C00;padding:14px;text-align:center;">
+        <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Rate</div>
+        <div style="font-size:26px;font-weight:700;color:#F57C00;">{{ attendance_pct }}%</div>
+        <div style="font-size:11px;color:#5A6A85;margin-top:2px;">overall</div>
+      </div>
+    </div>
+    
+    <div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;margin-top:16px;">
+      <div style="padding:14px 16px;border-bottom:1px solid #EBF4FF;">
+        <div style="font-size:15px;font-weight:600;color:#1A1A2E;">🗓 Day-by-Day Attendance</div>
+      </div>
+    
+      {% if day_rows %}
+        {% for row in day_rows %}
+        <div style="padding:12px 16px;border-bottom:1px solid #F0F7FF;{% if row.is_today %}background:#EBF4FF;{% endif %}">
+    
+          <!-- Row 1: Date + Day + Today + Score -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:13px;font-weight:600;color:#1A1A2E;">{{ row.date }}</span>
+              <span style="font-size:11px;background:#F0F7FF;color:#5A6A85;padding:2px 8px;border-radius:20px;">{{ row.day_name }}</span>
+              {% if row.is_today %}
+                <span style="font-size:10px;background:#1A73E8;color:#fff;padding:2px 8px;border-radius:20px;font-weight:600;">TODAY</span>
+              {% endif %}
             </div>
-            <div style="flex:1; text-align:center; padding:14px 8px; border-right:1px solid #DDEEFF;">
-                <div style="font-size:24px; font-weight:700; color:#E53935;">{{ attendance_stats.absent }}</div>
-                <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Absent</div>
+            <span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+              {% if row.day_present == 3 %}background:#E8F5E9;color:#2E7D32;
+              {% elif row.day_present >= 1 %}background:#FFF8E1;color:#F57C00;
+              {% else %}background:#FFEBEE;color:#C62828;{% endif %}">
+              {{ row.day_present }}/3 slots
+            </span>
+          </div>
+    
+          <!-- Row 2: 3 slot boxes side by side -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+    
+            <div style="border-radius:8px;padding:8px 6px;text-align:center;
+              {% if row.early == 'P' %}background:#E8F5E9;border:1px solid #C8E6C9;
+              {% elif row.early == 'A' %}background:#FFEBEE;border:1px solid #FFCDD2;
+              {% else %}background:#F8FBFF;border:1px solid #DDEEFF;{% endif %}">
+              <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;
+                {% if row.early == 'P' %}color:#2E7D32;{% elif row.early == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">
+                Early
+              </div>
+              <div style="font-size:16px;font-weight:700;
+                {% if row.early == 'P' %}color:#2E7D32;{% elif row.early == 'A' %}color:#C62828;{% else %}color:#D3D1C7;{% endif %}">
+                {% if row.early == 'P' %}✓{% elif row.early == 'A' %}✗{% else %}—{% endif %}
+              </div>
             </div>
-            <div style="flex:1; text-align:center; padding:14px 8px;">
-                <div style="font-size:24px; font-weight:700; color:#F57C00;">{{ attendance_stats.total }}</div>
-                <div style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; margin-top:3px; letter-spacing:0.5px;">Total Logged</div>
+    
+            <div style="border-radius:8px;padding:8px 6px;text-align:center;
+              {% if row.morning == 'P' %}background:#E8F5E9;border:1px solid #C8E6C9;
+              {% elif row.morning == 'A' %}background:#FFEBEE;border:1px solid #FFCDD2;
+              {% else %}background:#F8FBFF;border:1px solid #DDEEFF;{% endif %}">
+              <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;
+                {% if row.morning == 'P' %}color:#2E7D32;{% elif row.morning == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">
+                Morning
+              </div>
+              <div style="font-size:16px;font-weight:700;
+                {% if row.morning == 'P' %}color:#2E7D32;{% elif row.morning == 'A' %}color:#C62828;{% else %}color:#D3D1C7;{% endif %}">
+                {% if row.morning == 'P' %}✓{% elif row.morning == 'A' %}✗{% else %}—{% endif %}
+              </div>
             </div>
+    
+            <div style="border-radius:8px;padding:8px 6px;text-align:center;
+              {% if row.afternoon == 'P' %}background:#E8F5E9;border:1px solid #C8E6C9;
+              {% elif row.afternoon == 'A' %}background:#FFEBEE;border:1px solid #FFCDD2;
+              {% else %}background:#F8FBFF;border:1px solid #DDEEFF;{% endif %}">
+              <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;
+                {% if row.afternoon == 'P' %}color:#2E7D32;{% elif row.afternoon == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">
+                Afternoon
+              </div>
+              <div style="font-size:16px;font-weight:700;
+                {% if row.afternoon == 'P' %}color:#2E7D32;{% elif row.afternoon == 'A' %}color:#C62828;{% else %}color:#D3D1C7;{% endif %}">
+                {% if row.afternoon == 'P' %}✓{% elif row.afternoon == 'A' %}✗{% else %}—{% endif %}
+              </div>
+            </div>
+    
+          </div>
         </div>
-        
-        <h5 style="margin:20px 0 10px; font-size:14px;">Recent Attendance (Last 30 Logs)</h5>
-        {% if attendances %}
-            <div class="history-chips">
-              {% for att in attendances %}
-                {% if att.is_present %}
-                  <div class="chip chip-present" title="{{ att.date }} ({{ att.get_slot_display }})">{{ att.date|date:"d M" }} - {{ att.slot|title }}</div>
-                {% else %}
-                 <div class="chip chip-absent" title="{{ att.date }} ({{ att.get_slot_display }})">{{ att.date|date:"d M" }} - {{ att.slot|title }}</div>
-                {% endif %}
-              {% endfor %}
-            </div>
-        {% else %}
-            <p style="color:var(--text-secondary); font-size:13px; margin:0;">No attendance records found.</p>
-        {% endif %}
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:40px 20px;">
+          <div style="font-size:36px;margin-bottom:10px;">📋</div>
+          <div style="font-size:14px;color:#5A6A85;">No attendance records yet.</div>
+        </div>
+      {% endif %}
     </div>
 
 
