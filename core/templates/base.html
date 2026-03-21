@@ -1292,6 +1292,122 @@
     });
     </script>
     {% endif %}
+    <style>
+.upload-wrapper{border:2px dashed #DDEEFF;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:6px;position:relative;background:#fff;}
+.upload-wrapper:hover{border-color:#1A73E8;}
+.upload-wrapper input[type=file]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;}
+.upload-icon{font-size:24px;margin-bottom:6px;}
+.upload-text{font-size:13px;color:#5A6A85;}
+.upload-hint{font-size:11px;color:#B4B2A9;margin-top:3px;}
+.file-info-box{display:none;background:#F0F7FF;border:1px solid #DDEEFF;border-radius:8px;padding:10px 14px;margin-bottom:6px;align-items:center;gap:12px;}
+.file-info-box.show{display:flex;}
+.file-preview{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid #DDEEFF;}
+.file-details{flex:1;min-width:0;}
+.file-name-text{font-size:12px;font-weight:500;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-size-text{font-size:11px;color:#5A6A85;margin-top:2px;}
+.size-pill{font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;margin-left:6px;}
+.size-ok{background:#E8F5E9;color:#2E7D32;}
+.size-warn{background:#FFF8E1;color:#F57C00;}
+.size-large{background:#FFEBEE;color:#C62828;}
+.compress-info{font-size:11px;color:#1A73E8;margin-top:2px;}
+</style>
+
+<script>
+function initFileInput(inputEl, maxMB) {
+  const wrapper = inputEl.closest('.upload-wrapper') || inputEl.parentElement;
+  const container = wrapper.parentElement;
+
+  // Create info box if not exists
+  let infoBox = container.querySelector('.file-info-box');
+  if (!infoBox) {
+    infoBox = document.createElement('div');
+    infoBox.className = 'file-info-box';
+    infoBox.innerHTML = `
+      <img class="file-preview" src="" style="display:none;">
+      <div style="width:44px;height:44px;border-radius:8px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;" class="file-icon">📄</div>
+      <div class="file-details">
+        <div class="file-name-text"></div>
+        <div class="file-size-text"></div>
+        <div class="compress-info"></div>
+      </div>
+    `;
+    wrapper.insertAdjacentElement('afterend', infoBox);
+  }
+
+  inputEl.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    const sizeMB = file.size / (1024 * 1024);
+    const sizeText = sizeMB < 1
+      ? (file.size / 1024).toFixed(1) + ' KB'
+      : sizeMB.toFixed(2) + ' MB';
+
+    infoBox.querySelector('.file-name-text').textContent = file.name;
+
+    let pillClass = 'size-ok';
+    let pillText = '✓ Under ' + maxMB + 'MB';
+    let compressText = '';
+
+    if (sizeMB > maxMB) {
+      pillClass = sizeMB > maxMB * 2 ? 'size-large' : 'size-warn';
+      pillText = sizeText;
+      compressText = '⚡ Will be compressed to under ' + maxMB + 'MB automatically';
+    }
+
+    infoBox.querySelector('.file-size-text').innerHTML =
+      'Size: <strong>' + sizeText + '</strong>' +
+      '<span class="size-pill ' + pillClass + '">' + pillText + '</span>';
+
+    infoBox.querySelector('.compress-info').textContent = compressText;
+
+    // Show image preview
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const preview = infoBox.querySelector('.file-preview');
+        const icon = infoBox.querySelector('.file-icon');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        icon.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    infoBox.classList.add('show');
+    wrapper.style.borderColor = '#1A73E8';
+    wrapper.style.background = '#F8FBFF';
+  });
+}
+
+// Auto-initialize all file inputs on page load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[type=file]').forEach(function(input) {
+    const label = input.closest('.form-group, .form-row, div')
+      ?.querySelector('label')?.textContent?.toLowerCase() || '';
+
+    let maxMB = 1;
+    if (label.includes('id proof') || label.includes('bill') || label.includes('update')) {
+      maxMB = 2;
+    }
+
+    // Wrap in upload-wrapper if not already
+    if (!input.closest('.upload-wrapper')) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'upload-wrapper';
+      wrapper.innerHTML = `
+        <div class="upload-icon">📸</div>
+        <div class="upload-text">Click to upload or drag & drop</div>
+        <div class="upload-hint">Max ${maxMB}MB after compression</div>
+      `;
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+    }
+
+    initFileInput(input, maxMB);
+  });
+});
+</script>
 </body>
 
 </html>
