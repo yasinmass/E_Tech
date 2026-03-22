@@ -1123,9 +1123,7 @@
                 class="menu-item {% if request.path == '/customer-dashboard/' %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">🏠</span>Overview
             </a>
-            <a href="{% url 'customer_sites' %}" class="menu-item {% if '/sites/' in request.path %}active{% endif %}">
-                <span class="menu-icon"></span> <span style="margin-right:6px;">🏗️</span>My Sites
-            </a>
+
             <a href="{% url 'customer_updates' %}"
                 class="menu-item {% if '/updates/' in request.path %}active{% endif %}">
                 <span class="menu-icon"></span> <span style="margin-right:6px;">📸</span>Work Updates
