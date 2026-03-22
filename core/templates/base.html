@@ -1439,12 +1439,20 @@ document.addEventListener('DOMContentLoaded', function() {
 // Show hint banner only if not dismissed before
 function initMenuHint() {
   const dismissed = localStorage.getItem('menuHintDismissed');
-  if (!dismissed) {
-    const banner = document.getElementById('menu-hint-banner');
-    if (banner && window.innerWidth <= 768) {
-      banner.style.display = 'flex';
-      banner.style.setProperty('display', 'flex', 'important');
-    }
+  const banner = document.getElementById('menu-hint-banner');
+  if (!banner) return;
+
+  const isDashboard = window.location.pathname === '/' ||
+    window.location.pathname.includes('dashboard');
+
+  if (!dismissed && isDashboard && window.innerWidth <= 768) {
+    banner.style.setProperty('display', 'flex', 'important');
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      banner.style.setProperty('display', 'none', 'important');
+      localStorage.setItem('menuHintDismissed', 'true');
+    }, 5000);
   }
 }
 
