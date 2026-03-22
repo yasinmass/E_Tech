@@ -5,7 +5,7 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
   <div>
     <h2 style="font-size:20px;font-weight:700;color:#1A1A2E;margin-bottom:4px;">📜 Activity History</h2>
-    <p style="font-size:13px;color:#5A6A85;">Full audit log of all actions across the app.</p>
+    {% if subtitle %}<p class="page-subtitle" style="font-size:13px;color:#5A6A85;">{{ subtitle }}</p>{% endif %}
   </div>
   <div style="font-size:12px;color:#5A6A85;background:#F0F7FF;padding:6px 14px;border-radius:20px;border:1px solid #DDEEFF;">
     {{ logs.count }} event{{ logs.count|pluralize }}

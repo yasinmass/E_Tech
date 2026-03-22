@@ -3,7 +3,7 @@
 
 <div style="margin-bottom:20px;">
   <div style="font-size:20px;font-weight:600;color:#1A1A2E;">📸 Work Updates</div>
-  <div style="font-size:13px;color:#5A6A85;margin-top:2px;">Progress updates for your site.</div>
+  {% if subtitle %}<p class="page-subtitle" style="font-size:13px;color:#5A6A85;margin-top:2px;">{{ subtitle }}</p>{% endif %}
 </div>
 
 {% if updates %}

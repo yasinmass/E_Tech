@@ -12,7 +12,7 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
   <div>
     <div style="font-size:20px;font-weight:600;color:#1A1A2E;">🏗️ Sites</div>
-    <div style="font-size:13px;color:#5A6A85;margin-top:2px;">Tap a site to view full details.</div>
+    {% if subtitle %}<p class="page-subtitle" style="font-size:13px;color:#5A6A85;margin-top:2px;">{{ subtitle }}</p>{% endif %}
   </div>
   <a href="{% url 'add_site' %}" style="background:#1A73E8;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;">+ Add Site</a>
 </div>
