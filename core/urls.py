@@ -23,6 +23,7 @@ urlpatterns = [
     path('mgmt/assign-task/', views.assign_task, name='assign_task'),
     path('mgmt/mark-attendance/', views.admin_mark_attendance, name='admin_mark_attendance'),
     path('mgmt/upload-bill/', views.upload_bill, name='admin_upload_bill'),
+    path('mgmt/upload-update/', views.admin_upload_update, name='admin_upload_update'),
 
     # ── Admin: Customers (Feature 1) ──────────────────────────────────────────
     path('mgmt/customers/', views.admin_customers, name='admin_customers'),
