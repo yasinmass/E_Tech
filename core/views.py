@@ -446,6 +446,20 @@ def admin_all_attendance(request):
 def admin_updates(request):
     return render(request, 'admin_updates.html', {'updates': WorkUpdate.objects.select_related('worker', 'site').order_by('-created_at')})
 
+@login_required
+def delete_update(request, update_id):
+    if request.user.role != 'admin':
+        return redirect('admin_updates')
+    update = get_object_or_404(WorkUpdate, id=update_id)
+    # Delete the image file from storage
+    if update.image:
+        import os
+        if os.path.exists(update.image.path):
+            os.remove(update.image.path)
+    update.delete()
+    log_activity(request.user, f"Deleted work update for site: {update.site.name}", 'update')
+    return redirect('admin_updates')
+
 @role_required('admin')
 def admin_upload_update(request):
     if request.method == 'POST':

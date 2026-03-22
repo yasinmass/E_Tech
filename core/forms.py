@@ -121,12 +121,11 @@ class AttendanceForm(forms.ModelForm):
 class WorkUpdateForm(forms.ModelForm):
     class Meta:
         model = WorkUpdate
-        fields = ['site', 'text', 'image', 'video']
+        fields = ['site', 'text', 'image']
         labels = {
             'site': 'Select Site',
             'text': 'Caption / Description',
             'image': 'Upload Image',
-            'video': 'Upload Video',
         }
 
     def __init__(self, *args, **kwargs):
@@ -141,13 +140,6 @@ class WorkUpdateForm(forms.ModelForm):
             if image.size > 10 * 1024 * 1024:  # 10 MB
                 raise forms.ValidationError('Image file is too large. Maximum allowed size is 10 MB.')
         return image
-
-    def clean_video(self):
-        video = self.cleaned_data.get('video')
-        if video and hasattr(video, 'size'):
-            if video.size > 50 * 1024 * 1024:  # 50 MB
-                raise forms.ValidationError('Video file is too large. Maximum allowed size is 50 MB.')
-        return video
 
 # ── Existing + File Size Validation: Bill ────────────────────────────────────
 class BillForm(forms.ModelForm):

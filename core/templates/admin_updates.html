@@ -33,6 +33,13 @@
       <source src="{{ update.video.url }}" type="video/mp4">
     </video>
     {% endif %}
+    {% if user.role == 'admin' %}
+    <a href="{% url 'delete_update' update.id %}"
+      onclick="return confirm('Delete this work update?')"
+      style="display:inline-flex;align-items:center;gap:4px;background:#FFEBEE;color:#C62828;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;margin-top:8px;">
+      🗑 Delete
+    </a>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

@@ -14,6 +14,7 @@ urlpatterns = [
     path('mgmt/tasks/', views.admin_tasks, name='admin_tasks'),
     path('mgmt/attendance/', views.admin_all_attendance, name='admin_all_attendance'),
     path('mgmt/updates/', views.admin_updates, name='admin_updates'),
+    path('updates/<int:update_id>/delete/', views.delete_update, name='delete_update'),
     path('mgmt/bills/', views.admin_all_bills, name='admin_all_bills'),
 
     # ── Admin: Create ─────────────────────────────────────────────────────────
