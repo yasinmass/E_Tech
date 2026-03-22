@@ -2,49 +2,92 @@
 {% block title %}My Work Updates - E-Tech Builders{% endblock %}
 {% block content %}
 
-<div class="page-header">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
   <div>
-    <h2>📸 My Work Updates</h2>
-    <p class="page-subtitle">Your submitted progress updates for all sites.</p>
+    <div style="font-size:20px;font-weight:600;color:#1A1A2E;">📸 My Work Updates</div>
+    <div style="font-size:13px;color:#5A6A85;margin-top:2px;">Your submitted progress updates for all sites.</div>
   </div>
-  <a href="{% url 'worker_upload_update' %}" class="btn">＋ Upload Update</a>
+  <a href="{% url 'worker_upload_update' %}"
+    style="background:#1A73E8;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;">
+    + Upload Update
+  </a>
 </div>
 
 {% if updates %}
-<div class="grid-2">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
   {% for update in updates %}
-  <div class="update-card">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-      <div style="font-size:13px; color:var(--primary-color); font-weight:600;">📍 {{ update.site.name }}</div>
-      <span style="font-size:12px; color:var(--text-secondary);">{{ update.created_at|date:"M d, Y" }}</span>
-    </div>
-    {% if update.text %}
-    <p style="font-size:13px; color:var(--text-secondary); margin:0 0 10px; line-height:1.5;">{{ update.text }}</p>
-    {% endif %}
+  <div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;">
+
+    <!-- Image — fixed height, object-fit cover -->
     {% if update.image %}
-    <img src="{{ update.image.url }}" alt="Work update image">
-    {% endif %}
-    {% if update.video %}
-    <video controls style="max-width:100%; border-radius:8px; margin-top:10px;">
-      <source src="{{ update.video.url }}" type="video/mp4">
-    </video>
-    {% endif %}
-    {% if user.role == 'admin' %}
+    <div style="position:relative;">
+      <img src="{{ update.image.url }}"
+        style="width:100%;height:200px;object-fit:cover;display:block;cursor:pointer;"
+        onclick="openImageModal('{{ update.image.url }}')">
+      <!-- Delete button overlaid top right -->
+      {% if user.role == 'admin' %}
       <a href="{% url 'delete_update' update.id %}"
-        onclick="return confirm('Delete this update?')"
-        style="background:#FFEBEE;color:#C62828;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:500;text-decoration:none;display:inline-flex;margin-top:8px;">
-        🗑 Delete
+        onclick="return confirm('Delete this work update?')"
+        style="position:absolute;top:8px;right:8px;background:rgba(198,40,40,0.9);color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px;">
+        🗑
       </a>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="width:100%;height:120px;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;">
+      📸
+      {% if user.role == 'admin' %}
+      <a href="{% url 'delete_update' update.id %}"
+        onclick="return confirm('Delete this work update?')"
+        style="position:absolute;top:8px;right:8px;background:rgba(198,40,40,0.9);color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px;">
+        🗑
+      </a>
+      {% endif %}
+    </div>
     {% endif %}
+
+    <!-- Card body -->
+    <div style="padding:12px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:#1A73E8;font-weight:600;">📍 {{ update.site.name }}</span>
+        <span style="font-size:11px;color:#5A6A85;">{{ update.created_at|date:"M d, Y" }}</span>
+      </div>
+      {% if update.text %}
+      <div style="font-size:12px;color:#5A6A85;line-height:1.4;">{{ update.text }}</div>
+      {% endif %}
+    </div>
+
   </div>
   {% endfor %}
 </div>
+
 {% else %}
-<div class="card" style="text-align:center; padding:40px;">
-  <div style="font-size:48px; margin-bottom:12px;">📸</div>
-  <p style="color:var(--text-secondary);">You haven't uploaded any work updates yet.</p>
-  <a href="{% url 'worker_upload_update' %}" class="btn" style="margin-top:12px;">＋ Upload Your First Update</a>
+<div style="text-align:center;padding:60px 20px;background:#fff;border-radius:12px;border:1px solid #DDEEFF;">
+  <div style="font-size:48px;margin-bottom:12px;">📸</div>
+  <div style="font-size:16px;font-weight:600;color:#1A1A2E;">No updates yet</div>
+  <div style="font-size:13px;color:#5A6A85;margin-top:6px;">You haven't uploaded any updates yet.</div>
+  <a href="{% url 'worker_upload_update' %}" style="display:inline-block;background:#1A73E8;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;margin-top:16px;">
+    + Upload Your First Update
+  </a>
 </div>
 {% endif %}
+
+<!-- Image fullscreen modal -->
+<div id="imageModal" onclick="closeImageModal()"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:2000;align-items:center;justify-content:center;cursor:pointer;">
+  <img id="modalImg" src="" style="max-width:95%;max-height:90vh;object-fit:contain;border-radius:8px;">
+  <button onclick="closeImageModal()"
+    style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;">×</button>
+</div>
+
+<script>
+function openImageModal(url) {
+  document.getElementById('modalImg').src = url;
+  document.getElementById('imageModal').style.display = 'flex';
+}
+function closeImageModal() {
+  document.getElementById('imageModal').style.display = 'none';
+}
+</script>
 
 {% endblock %}
