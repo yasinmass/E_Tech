@@ -1,6 +1,43 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+def worker_photo_path(instance, filename):
+    ext = filename.split('.')[-1]
+    name = instance.user.get_full_name() or instance.user.username
+    name = name.replace(' ', '_').lower()
+    return f'workers/photos/{name}_photo.{ext}'
+
+def worker_id_proof_path(instance, filename):
+    ext = filename.split('.')[-1]
+    name = instance.user.get_full_name() or instance.user.username
+    name = name.replace(' ', '_').lower()
+    return f'workers/id_proofs/{name}_id.{ext}'
+
+def site_photo_path(instance, filename):
+    ext = filename.split('.')[-1]
+    name = instance.name.replace(' ', '_').lower()
+    return f'sites/photos/{name}_site.{ext}'
+
+def owner_photo_path(instance, filename):
+    ext = filename.split('.')[-1]
+    name = instance.owner_name.replace(' ', '_').lower()
+    return f'sites/owners/{name}_owner.{ext}'
+
+def bill_photo_path(instance, filename):
+    ext = filename.split('.')[-1]
+    site = instance.site.name.replace(' ', '_').lower() if instance.site else 'unknown'
+    return f'bills/{site}_bill.{ext}'
+
+def update_photo_path(instance, filename):
+    ext = filename.split('.')[-1]
+    site = instance.site.name.replace(' ', '_').lower() if instance.site else 'unknown'
+    return f'updates/{site}_update.{ext}'
+
+def tool_photo_path(instance, filename):
+    ext = filename.split('.')[-1]
+    name = instance.name.replace(' ', '_').lower()
+    return f'tools/{name}_tool.{ext}'
+
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
@@ -21,8 +58,8 @@ class Site(models.Model):
     owner_name = models.CharField(max_length=200, blank=True)
     address = models.CharField(max_length=500, blank=True)
     owner_phone = models.CharField(max_length=20, blank=True)
-    site_photo = models.ImageField(upload_to='sites/photos/', blank=True, null=True)
-    owner_photo = models.ImageField(upload_to='sites/owners/', blank=True, null=True)
+    site_photo = models.ImageField(upload_to=site_photo_path, blank=True, null=True)
+    owner_photo = models.ImageField(upload_to=owner_photo_path, blank=True, null=True)
     customer = models.OneToOneField(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='owned_site'
     )
@@ -74,7 +111,7 @@ class WorkUpdate(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='updates')
     worker = models.ForeignKey(User, on_delete=models.CASCADE, related_name='work_updates', limit_choices_to={'role': 'worker'})
     text = models.TextField(blank=True)
-    image = models.ImageField(upload_to='updates/images/', blank=True, null=True)
+    image = models.ImageField(upload_to=update_photo_path, blank=True, null=True)
     video = models.FileField(upload_to='updates/videos/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -86,7 +123,7 @@ class Bill(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='bills/', blank=True, null=True)
+    image = models.ImageField(upload_to=bill_photo_path, blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -98,8 +135,8 @@ class WorkerProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     family_phone = models.CharField(max_length=20, blank=True, verbose_name='Family Contact Number')
     address = models.TextField(blank=True)
-    id_proof = models.ImageField(upload_to='workers/id_proofs/', blank=True, null=True, verbose_name='ID Proof Photo')
-    photo = models.ImageField(upload_to='workers/photos/', blank=True, null=True, verbose_name='Worker Photo')
+    id_proof = models.ImageField(upload_to=worker_id_proof_path, blank=True, null=True, verbose_name='ID Proof Photo')
+    photo = models.ImageField(upload_to=worker_photo_path, blank=True, null=True, verbose_name='Worker Photo')
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
@@ -120,7 +157,7 @@ class Tool(models.Model):
     name = models.CharField(max_length=200)
     location = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
-    photo = models.ImageField(upload_to='tools/', blank=True, null=True)
+    photo = models.ImageField(upload_to=tool_photo_path, blank=True, null=True)
     is_available = models.BooleanField(default=True)
     taken_by = models.ForeignKey(
         User, on_delete=models.SET_NULL,
