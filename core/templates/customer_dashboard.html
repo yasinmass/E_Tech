@@ -23,27 +23,6 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="section-header">
-    <span class="section-title">🏗️ My Sites</span>
-    <a href="{% url 'customer_sites' %}" class="btn btn-sm btn-secondary">View All</a>
-  </div>
-  {% if sites %}
-  <div class="grid-2" style="margin-top:0;">
-    {% for site in sites %}
-    <div style="background:#F0F7FF; border-radius:10px; padding:16px; border:1px solid #DDEEFF;">
-      <div style="font-size:15px; font-weight:700; margin-bottom:6px;">{{ site.name }}</div>
-      {% if site.address %}<p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px;">📍 {{ site.address }}</p>{% endif %}
-      <div style="font-size:12px; color:var(--text-secondary);">
-        Workers: {% for w in site.workers.all %}<span class="worker-tag">{{ w.get_full_name|default:w.username }}</span>{% empty %}None{% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p style="color:var(--text-secondary); text-align:center; padding:20px;">No sites assigned yet.</p>
-  {% endif %}
-</div>
 
 <div class="card">
   <div class="section-header">
