@@ -848,9 +848,6 @@
             #hamburger {
                 display: flex !important;
             }
-            #menu-hint-banner {
-                display: flex !important;
-            }
             /* Main content full width */
             .main-wrapper {
                 margin-left: 0 !important;
@@ -1222,13 +1219,6 @@
         </header>
 
         <main>
-            <div id="menu-hint-banner"
-              style="display:none;background:#1A73E8;color:#fff;padding:10px 16px;border-radius:10px;font-size:12px;align-items:center;gap:8px;margin-bottom:14px;">
-              <span style="font-size:16px;">☰</span>
-              <span>Tap the <strong>MENU</strong> button at top left to navigate between pages</span>
-              <button onclick="dismissHint()"
-                style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">×</button>
-            </div>
             {% if messages %}
             <div style="margin-bottom:20px;">
                 {% for message in messages %}
@@ -1435,36 +1425,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script>
-// Show hint banner only if not dismissed before
-function initMenuHint() {
-  const dismissed = localStorage.getItem('menuHintDismissed');
-  const banner = document.getElementById('menu-hint-banner');
-  if (!banner) return;
-
-  const isDashboard = window.location.pathname === '/' ||
-    window.location.pathname.includes('dashboard');
-
-  if (!dismissed && isDashboard && window.innerWidth <= 768) {
-    banner.style.setProperty('display', 'flex', 'important');
-
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-      banner.style.setProperty('display', 'none', 'important');
-      localStorage.setItem('menuHintDismissed', 'true');
-    }, 5000);
-  }
-}
-
-function dismissHint() {
-  localStorage.setItem('menuHintDismissed', 'true');
-  const banner = document.getElementById('menu-hint-banner');
-  if (banner) {
-      banner.style.setProperty('display', 'none', 'important');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', initMenuHint);
 </script>
 
 </body>
