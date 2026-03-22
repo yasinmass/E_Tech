@@ -13,7 +13,29 @@
     <style>
         .app-logo {
             height: 40px;
-            width: auto;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: white;
+            padding: 4px;
+        }
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar-brand:hover {
+            opacity: 0.9;
+        }
+        .app-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
         }
         :root {
             --bg-main: #F0F7FF;
@@ -1044,12 +1066,9 @@
     {% if user.is_authenticated %}
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     <aside class="sidebar" id="sidebar">
-        <div
-            style="display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.15);">
-            <div
-                style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <img src="{% static 'images/E_tech_perfect_logo.png' %}" class="app-logo" alt="Logo">
-            </div>
+        <div class="sidebar-brand">
+            <img src="{% static 'images/E_tech_perfect_logo.png' %}" class="app-logo" alt="Logo">
+            <span class="app-name">E-Tech Builders</span>
         </div>
 
         <nav class="sidebar-menu">
