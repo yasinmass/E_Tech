@@ -374,12 +374,17 @@ def customer_dashboard(request):
     owner_photo = site.owner_photo if site and site.owner_photo else None
     owner_name = site.owner_name if site else request.user.username
 
+    completed_tasks = site.tasks.filter(status='Done').count() if site else 0
+    total_site_tasks = site.tasks.count() if site else 0
+
     return render(request, 'customer_dashboard.html', {
         'site': site,
         'new_updates': new_updates,
         'total_updates': total_updates,
         'owner_photo': owner_photo,
         'owner_name': owner_name,
+        'completed_tasks': completed_tasks,
+        'total_site_tasks': total_site_tasks,
     })
 
 
