@@ -122,6 +122,18 @@ class WorkUpdateForm(forms.ModelForm):
     class Meta:
         model = WorkUpdate
         fields = ['site', 'text', 'image', 'video']
+        labels = {
+            'site': 'Select Site',
+            'text': 'Caption / Description',
+            'image': 'Upload Image',
+            'video': 'Upload Video',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show all sites in dropdown
+        self.fields['site'].queryset = Site.objects.all().order_by('name')
+        self.fields['site'].empty_label = 'Select a site...'
 
     def clean_image(self):
         image = self.cleaned_data.get('image')

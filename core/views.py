@@ -292,20 +292,34 @@ def worker_mark_task_complete(request, task_id):
 
 @role_required('worker')
 def worker_upload_update(request):
-    if request.method == "POST":
+    # Get sites where worker has active tasks
+    from django.db.models import Q
+    worker_sites = Site.objects.filter(
+        tasks__assigned_workers=request.user
+    ).distinct()
+
+    # If no task-based sites, show all sites
+    if not worker_sites.exists():
+        worker_sites = Site.objects.all()
+
+    if request.method == 'POST':
         form = WorkUpdateForm(request.POST, request.FILES)
         if form.is_valid():
-            update = form.save(commit=False)
+            instance = form.save(commit=False)
+            instance.worker = request.user
             if 'image' in request.FILES:
-                update.image = compress_image(request.FILES['image'], max_size_mb=2)
-            update.worker = request.user
-            update.save()
-            log_activity(request.user, f"Uploaded work update for site: {update.site.name}", 'update')
-            return redirect('worker_dashboard')
+                instance.image = compress_image(request.FILES['image'], max_size_mb=2)
+            instance.save()
+            log_activity(request.user, f"Uploaded work update for site: {instance.site.name}", 'update')
+            return redirect('worker_my_updates')
     else:
         form = WorkUpdateForm()
-        form.fields['site'].queryset = request.user.assigned_sites.all()
-    return render(request, 'form_template.html', {'form': form, 'title': 'Upload Work Update', 'back_url': 'worker_dashboard'})
+
+    return render(request, 'form_template.html', {
+        'form': form,
+        'title': 'Upload Work Update',
+        'back_url': 'worker_my_updates'
+    })
 
 @role_required('worker')
 def worker_upload_bill(request):
@@ -421,6 +435,27 @@ def admin_all_attendance(request):
 @role_required('admin')
 def admin_updates(request):
     return render(request, 'admin_updates.html', {'updates': WorkUpdate.objects.select_related('worker', 'site').order_by('-created_at')})
+
+@role_required('admin')
+def admin_upload_update(request):
+    if request.method == 'POST':
+        form = WorkUpdateForm(request.POST, request.FILES)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.worker = request.user
+            if 'image' in request.FILES:
+                instance.image = compress_image(request.FILES['image'], max_size_mb=2)
+            instance.save()
+            log_activity(request.user, f"Uploaded work update for site: {instance.site.name}", 'update')
+            return redirect('admin_updates')
+    else:
+        form = WorkUpdateForm()
+
+    return render(request, 'form_template.html', {
+        'form': form,
+        'title': 'Upload Work Update',
+        'back_url': 'admin_updates'
+    })
 
 @role_required('admin')
 def admin_all_bills(request):
