@@ -6,7 +6,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 import json
 from datetime import date
 from django.db.models import Sum
-from .models import User, Site, Task, Attendance, WorkUpdate, Bill, WorkerProfile, Product, Tool, ActivityLog
+from .models import User, Site, Task, Attendance, WorkUpdate, ViewedUpdate, Bill, WorkerProfile, Product, Tool, ActivityLog
 from .forms import (
     AddWorkerForm, CustomerCreationForm, WorkerEditForm,
     SiteForm, SiteEditForm, TaskForm, AttendanceForm, WorkUpdateForm, BillForm,
