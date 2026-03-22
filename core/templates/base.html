@@ -1174,9 +1174,25 @@
 
                   <!-- Profile avatar button -->
                   <div onclick="toggleProfileMenu()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 12px;border-radius:10px;border:1px solid #DDEEFF;background:#fff;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#1A73E8;">
-                      {{ user.get_full_name|default:user.username|first|upper }}
-                    </div>
+                    {% if user.role == 'worker' and user.worker_profile.photo %}
+                      <img src="{{ user.worker_profile.photo.url }}"
+                        style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #DDEEFF;">
+                    {% elif user.role == 'customer' %}
+                      {% with site=user.owned_site %}
+                        {% if site and site.owner_photo %}
+                          <img src="{{ site.owner_photo.url }}"
+                            style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #DDEEFF;">
+                        {% else %}
+                          <div style="width:32px;height:32px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#1A73E8;">
+                            {{ user.get_full_name|default:user.username|first|upper }}
+                          </div>
+                        {% endif %}
+                      {% endwith %}
+                    {% else %}
+                      <div style="width:32px;height:32px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#1A73E8;">
+                        {{ user.get_full_name|default:user.username|first|upper }}
+                      </div>
+                    {% endif %}
                     <span style="font-size:13px;font-weight:500;color:#1A1A2E;">
                       {{ user.get_full_name|default:user.username }}
                     </span>

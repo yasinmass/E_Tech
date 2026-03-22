@@ -350,11 +350,37 @@ def worker_upload_bill(request):
 # ---------- Customer Views ----------
 @role_required('customer')
 def customer_dashboard(request):
-    sites = Site.objects.filter(customer=request.user).prefetch_related('workers')
-    updates = WorkUpdate.objects.filter(site__in=sites).select_related('worker', 'site').order_by('-created_at')
-    bills = Bill.objects.filter(site__in=sites).select_related('site').order_by('-date')
-    context = {'sites': sites, 'updates': updates, 'bills': bills}
-    return render(request, 'customer_dashboard.html', context)
+    # Get customer's site
+    site = Site.objects.filter(customer=request.user).first()
+
+    # Get unviewed work updates for their site only
+    if site:
+        viewed_ids = ViewedUpdate.objects.filter(
+            customer=request.user
+        ).values_list('update_id', flat=True)
+
+        new_updates = WorkUpdate.objects.filter(
+            site=site
+        ).exclude(
+            id__in=viewed_ids
+        ).order_by('-created_at')
+
+        total_updates = new_updates.count()
+    else:
+        new_updates = []
+        total_updates = 0
+
+    # Get owner photo from site
+    owner_photo = site.owner_photo if site and site.owner_photo else None
+    owner_name = site.owner_name if site else request.user.username
+
+    return render(request, 'customer_dashboard.html', {
+        'site': site,
+        'new_updates': new_updates,
+        'total_updates': total_updates,
+        'owner_photo': owner_photo,
+        'owner_name': owner_name,
+    })
 
 
 @role_required('admin')
@@ -626,7 +652,27 @@ def customer_sites(request):
 
 @role_required('customer')
 def customer_updates(request):
-    return render(request, 'customer_updates.html', {'updates': WorkUpdate.objects.filter(site__customer=request.user).order_by('-created_at')})
+    site = Site.objects.filter(customer=request.user).first()
+    if site:
+        updates = WorkUpdate.objects.filter(site=site).order_by('-created_at')
+        # Mark all as viewed when customer visits updates page
+        for update in updates:
+            ViewedUpdate.objects.get_or_create(
+                customer=request.user,
+                update=update
+            )
+    else:
+        updates = []
+    return render(request, 'customer_updates.html', {'updates': updates})
+
+@role_required('customer')
+def mark_update_viewed(request, update_id):
+    update = get_object_or_404(WorkUpdate, id=update_id)
+    ViewedUpdate.objects.get_or_create(
+        customer=request.user,
+        update=update
+    )
+    return redirect('customer_updates')
 
 @role_required('customer')
 def customer_bills(request):

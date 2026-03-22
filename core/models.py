@@ -118,6 +118,14 @@ class WorkUpdate(models.Model):
     def __str__(self):
         return f"Update by {self.worker} at {self.site} on {self.created_at.date()}"
 
+class ViewedUpdate(models.Model):
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='viewed_updates')
+    update = models.ForeignKey(WorkUpdate, on_delete=models.CASCADE, related_name='viewed_by')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('customer', 'update')
+
 class Bill(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='bills')
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)

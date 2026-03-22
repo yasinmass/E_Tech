@@ -67,6 +67,7 @@ urlpatterns = [
     path('customer-dashboard/', views.customer_dashboard, name='customer_dashboard'),
     path('customer/sites/', views.customer_sites, name='customer_sites'),
     path('customer/updates/', views.customer_updates, name='customer_updates'),
+    path('customer/updates/<int:update_id>/view/', views.mark_update_viewed, name='mark_update_viewed'),
     path('customer/bills/', views.customer_bills, name='customer_bills'),
     path('customer/tasks/', views.customer_tasks, name='customer_tasks'),
 
