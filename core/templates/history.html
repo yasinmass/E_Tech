@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load tz %}
 {% block title %}Activity History — E-Tech Builders{% endblock %}
 {% block content %}
 
@@ -81,8 +82,8 @@
     data-role="{% if log.user %}{{ log.user.role }}{% else %}unknown{% endif %}"
     data-action="{{ log.action }}"
     data-category="{{ log.category }}"
-    data-date="{{ log.timestamp|date:'M d, Y' }}"
-    data-time="{{ log.timestamp|time:'g:i A' }}">
+    data-date="{{ log.timestamp|localtime|date:'M d, Y' }}"
+    data-time="{{ log.timestamp|localtime|time:'g:i A' }}">
 
     <!-- Avatar -->
     <div style="width:38px;height:38px;border-radius:50%;background:#EBF4FF;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#1A73E8;flex-shrink:0;">
@@ -110,8 +111,8 @@
 
     <!-- Time — compact -->
     <div style="text-align:right;flex-shrink:0;">
-      <div style="font-size:11px;color:#5A6A85;">{{ log.timestamp|date:"M d" }}</div>
-      <div style="font-size:10px;color:#B4B2A9;">{{ log.timestamp|time:"g:i A" }}</div>
+      <div style="font-size:11px;color:#5A6A85;">{{ log.timestamp|localtime|date:"M d" }}</div>
+      <div style="font-size:10px;color:#B4B2A9;">{{ log.timestamp|localtime|time:"g:i A" }}</div>
     </div>
 
   </div>
