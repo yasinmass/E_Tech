@@ -5,10 +5,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/E_tech_perfect_logo.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/E_tech_perfect_logo.png' %}">
     <title>{% block title %}E-Tech Builders{% endblock %}</title>
     <meta name="description" content="E-Tech Builders — Construction Workforce Management System">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        .app-logo {
+            height: 40px;
+            width: auto;
+        }
         :root {
             --bg-main: #F0F7FF;
             --bg-white: #FFFFFF;
@@ -1041,11 +1047,9 @@
         <div
             style="display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.15);">
             <div
-                style="width:36px;height:36px;background:#ffffff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <img src="{% static 'images/logo.png' %}" alt="logo" style="width:28px;height:28px;object-fit:contain;">
+                style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img src="{% static 'images/E_tech_perfect_logo.png' %}" class="app-logo" alt="Logo">
             </div>
-            <span style="font-size:15px;font-weight:600;color:#ffffff;letter-spacing:-0.3px;">E-Tech <span
-                    style="color:#FFD54F;">Builders</span></span>
         </div>
 
         <nav class="sidebar-menu">
@@ -1159,7 +1163,9 @@
                   </span>
                 </div>
                 {% else %}
-                <a href="/" class="nav-brand" style="color: var(--primary-color); font-size:1rem;">⚡ E-Tech Builders</a>
+                <a href="/" class="nav-brand" style="color: var(--primary-color); font-size:1rem;">
+                    <img src="{% static 'images/E_tech_perfect_logo.png' %}" class="app-logo" alt="Logo">
+                </a>
                 {% endif %}
             </div>
 
