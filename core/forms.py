@@ -154,6 +154,17 @@ class BillForm(forms.ModelForm):
     class Meta:
         model = Bill
         fields = ['site', 'amount', 'description', 'image']
+        labels = {
+            'site': 'Select Site',
+            'amount': 'Amount (₹)',
+            'description': 'Description / Notes',
+            'image': 'Bill Photo',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['site'].queryset = Site.objects.all().order_by('name')
+        self.fields['site'].empty_label = 'Select a site...'
 
     def clean_image(self):
         image = self.cleaned_data.get('image')

@@ -207,7 +207,7 @@ def admin_mark_attendance(request):
 
 @role_required('admin')
 def upload_bill(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         form = BillForm(request.POST, request.FILES)
         if form.is_valid():
             instance = form.save(commit=False)
@@ -216,10 +216,15 @@ def upload_bill(request):
                 instance.image = compress_image(request.FILES['image'], max_size_mb=2)
             instance.save()
             log_activity(request.user, f"Uploaded bill: ₹{instance.amount} — {instance.site.name}", 'bill')
-            return redirect('admin_dashboard')
+            return redirect('admin_all_bills')
     else:
         form = BillForm()
-    return render(request, 'form_template.html', {'form': form, 'title': 'Upload Bill', 'back_url': 'admin_dashboard'})
+
+    return render(request, 'form_template.html', {
+        'form': form,
+        'title': 'Upload Bill',
+        'back_url': 'admin_all_bills'
+    })
 
 # ---------- Worker Views ----------
 @role_required('worker')
@@ -323,19 +328,24 @@ def worker_upload_update(request):
 
 @role_required('worker')
 def worker_upload_bill(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         form = BillForm(request.POST, request.FILES)
         if form.is_valid():
-            bill = form.save(commit=False)
+            instance = form.save(commit=False)
+            instance.uploaded_by = request.user
             if 'image' in request.FILES:
-                bill.image = compress_image(request.FILES['image'], max_size_mb=2)
-            bill.uploaded_by = request.user
-            bill.save()
-            return redirect('worker_dashboard')
+                instance.image = compress_image(request.FILES['image'], max_size_mb=2)
+            instance.save()
+            log_activity(request.user, f"Uploaded bill: ₹{instance.amount} — {instance.site.name}", 'bill')
+            return redirect('worker_my_bills')
     else:
         form = BillForm()
-        form.fields['site'].queryset = request.user.assigned_sites.all()
-    return render(request, 'form_template.html', {'form': form, 'title': 'Upload Bill', 'back_url': 'worker_dashboard'})
+
+    return render(request, 'form_template.html', {
+        'form': form,
+        'title': 'Upload Bill',
+        'back_url': 'worker_my_bills'
+    })
 
 # ---------- Customer Views ----------
 @role_required('customer')
