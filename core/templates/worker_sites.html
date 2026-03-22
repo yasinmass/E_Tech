@@ -14,7 +14,6 @@
       <tr>
         <th>Site</th>
         <th>Owner Name</th>
-        <th>Owner Phone</th>
         <th>Address</th>
         <th>Status</th>
       </tr>
@@ -24,7 +23,6 @@
       <tr onclick="openSiteModal(this)" style="cursor:pointer;"
         data-name="{{ site.name }}"
         data-owner="{{ site.owner_name }}"
-        data-phone="{{ site.owner_phone }}"
         data-address="{{ site.address }}"
         data-status="{{ site.status }}"
         data-location="{{ site.location|default:'' }}"
@@ -47,7 +45,6 @@
           </div>
         </td>
         <td>{{ site.owner_name }}</td>
-        <td>{{ site.owner_phone }}</td>
         <td style="color:#5A6A85;">{{ site.address }}</td>
         <td>
           <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
@@ -93,10 +90,6 @@
           <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Owner Name</div>
           <div id="sm-owner" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
         </div>
-        <div style="background:#F0F7FF;border-radius:8px;padding:10px 12px;">
-          <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;margin-bottom:4px;">Owner Phone</div>
-          <div id="sm-phone" style="font-size:13px;font-weight:500;color:#1A1A2E;"></div>
-        </div>
       </div>
       <div id="sm-owner-photo-wrap" style="display:none;margin-bottom:16px;">
         <div style="font-size:11px;color:#5A6A85;text-transform:uppercase;margin-bottom:6px;">Owner Photo</div>
@@ -117,7 +110,6 @@ function openSiteModal(row) {
   const status = row.dataset.status;
   document.getElementById('sm-name').textContent = row.dataset.name;
   document.getElementById('sm-owner').textContent = row.dataset.owner;
-  document.getElementById('sm-phone').textContent = row.dataset.phone;
   document.getElementById('sm-address').textContent = row.dataset.address;
   document.getElementById('sm-status-header').textContent = status;
   const statusEl = document.getElementById('sm-status');
