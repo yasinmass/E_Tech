@@ -1140,7 +1140,7 @@ def search_workers_api(request):
         designation = 'Worker'
         if hasattr(w, 'worker_profile'):
             designation = getattr(w.worker_profile, 'designation', 'Worker') or 'Worker'
-        data.append({'id': w.id, 'name': w.get_full_name() or w.username, 'role': designation})
+        data.append({'id': w.id, 'name': w.get_full_name() or w.username, 'designation': designation})
     return JsonResponse({'workers': data})
 
 
