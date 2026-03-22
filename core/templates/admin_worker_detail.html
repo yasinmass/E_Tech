@@ -70,7 +70,7 @@
   
   <div style="display:flex; flex-direction:column; gap:20px;">
     <!-- Attendance Stats Option -->
-    <!-- Attendance Stats Option -->
+    <!-- Stat Cards -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
       <div style="background:#fff;border-radius:12px;border-top:3px solid #2E7D32;padding:14px;text-align:center;">
         <div style="font-size:10px;color:#5A6A85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Present</div>
@@ -93,17 +93,16 @@
         <div style="font-size:11px;color:#5A6A85;margin-top:2px;">overall</div>
       </div>
     </div>
-    
-    <div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;margin-top:16px;">
+
+    <!-- Day-by-Day -->
+    <div style="background:#fff;border:1px solid #DDEEFF;border-radius:12px;overflow:hidden;">
       <div style="padding:14px 16px;border-bottom:1px solid #EBF4FF;">
         <div style="font-size:15px;font-weight:600;color:#1A1A2E;">🗓 Day-by-Day Attendance</div>
       </div>
-    
+
       {% if day_rows %}
         {% for row in day_rows %}
         <div style="padding:12px 16px;border-bottom:1px solid #F0F7FF;{% if row.is_today %}background:#EBF4FF;{% endif %}">
-    
-          <!-- Row 1: Date + Day + Today + Score -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <span style="font-size:13px;font-weight:600;color:#1A1A2E;">{{ row.date }}</span>
@@ -119,59 +118,47 @@
               {{ row.day_present }}/3 slots
             </span>
           </div>
-    
-          <!-- Row 2: 3 slot boxes side by side -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-    
             <div style="border-radius:8px;padding:8px 6px;text-align:center;
               {% if row.early == 'P' %}background:#E8F5E9;border:1px solid #C8E6C9;
               {% elif row.early == 'A' %}background:#FFEBEE;border:1px solid #FFCDD2;
               {% else %}background:#F8FBFF;border:1px solid #DDEEFF;{% endif %}">
-              <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;
-                {% if row.early == 'P' %}color:#2E7D32;{% elif row.early == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">
-                Early
-              </div>
+              <div style="font-size:9px;font-weight:600;text-transform:uppercase;margin-bottom:4px;
+                {% if row.early == 'P' %}color:#2E7D32;{% elif row.early == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">Early</div>
               <div style="font-size:16px;font-weight:700;
                 {% if row.early == 'P' %}color:#2E7D32;{% elif row.early == 'A' %}color:#C62828;{% else %}color:#D3D1C7;{% endif %}">
                 {% if row.early == 'P' %}✓{% elif row.early == 'A' %}✗{% else %}—{% endif %}
               </div>
             </div>
-    
             <div style="border-radius:8px;padding:8px 6px;text-align:center;
               {% if row.morning == 'P' %}background:#E8F5E9;border:1px solid #C8E6C9;
               {% elif row.morning == 'A' %}background:#FFEBEE;border:1px solid #FFCDD2;
               {% else %}background:#F8FBFF;border:1px solid #DDEEFF;{% endif %}">
-              <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;
-                {% if row.morning == 'P' %}color:#2E7D32;{% elif row.morning == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">
-                Morning
-              </div>
+              <div style="font-size:9px;font-weight:600;text-transform:uppercase;margin-bottom:4px;
+                {% if row.morning == 'P' %}color:#2E7D32;{% elif row.morning == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">Morning</div>
               <div style="font-size:16px;font-weight:700;
                 {% if row.morning == 'P' %}color:#2E7D32;{% elif row.morning == 'A' %}color:#C62828;{% else %}color:#D3D1C7;{% endif %}">
                 {% if row.morning == 'P' %}✓{% elif row.morning == 'A' %}✗{% else %}—{% endif %}
               </div>
             </div>
-    
             <div style="border-radius:8px;padding:8px 6px;text-align:center;
               {% if row.afternoon == 'P' %}background:#E8F5E9;border:1px solid #C8E6C9;
               {% elif row.afternoon == 'A' %}background:#FFEBEE;border:1px solid #FFCDD2;
               {% else %}background:#F8FBFF;border:1px solid #DDEEFF;{% endif %}">
-              <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;
-                {% if row.afternoon == 'P' %}color:#2E7D32;{% elif row.afternoon == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">
-                Afternoon
-              </div>
+              <div style="font-size:9px;font-weight:600;text-transform:uppercase;margin-bottom:4px;
+                {% if row.afternoon == 'P' %}color:#2E7D32;{% elif row.afternoon == 'A' %}color:#C62828;{% else %}color:#B4B2A9;{% endif %}">Afternoon</div>
               <div style="font-size:16px;font-weight:700;
                 {% if row.afternoon == 'P' %}color:#2E7D32;{% elif row.afternoon == 'A' %}color:#C62828;{% else %}color:#D3D1C7;{% endif %}">
                 {% if row.afternoon == 'P' %}✓{% elif row.afternoon == 'A' %}✗{% else %}—{% endif %}
               </div>
             </div>
-    
           </div>
         </div>
         {% endfor %}
       {% else %}
         <div style="text-align:center;padding:40px 20px;">
           <div style="font-size:36px;margin-bottom:10px;">📋</div>
-          <div style="font-size:14px;color:#5A6A85;">No attendance records yet.</div>
+          <div style="font-size:14px;color:#5A6A85;">No attendance records found.</div>
         </div>
       {% endif %}
     </div>

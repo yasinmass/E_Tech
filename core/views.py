@@ -679,8 +679,9 @@ def worker_detail(request, worker_id):
     worker = get_object_or_404(User, id=worker_id, role='worker')
     profile, created = WorkerProfile.objects.get_or_create(user=worker)
     from datetime import date, timedelta
+    from .models import Attendance
+
     records = Attendance.objects.filter(worker=worker).order_by('date')
-    
     present_slots = records.filter(is_present=True).count()
     absent_slots = records.filter(is_present=False).count()
     total_slots = present_slots + absent_slots
@@ -693,42 +694,25 @@ def worker_detail(request, worker_id):
         current = first_date
         while current <= today:
             day_records = records.filter(date=current)
-            
-            def get_slot_info(slot_name):
+            def get_slot(slot_name):
                 r = day_records.filter(slot=slot_name).first()
-                if not r:
-                    return {'sym': 'NT', 'color': '#BDBDBD', 'is_p': False}
-                sym = 'P' if r.is_present else 'A'
-                color = '#2E7D32' if r.is_present else '#C62828'
-                return {'sym': sym, 'color': color, 'is_p': r.is_present}
-            
-            e = get_slot_info('early')
-            m = get_slot_info('morning')
-            a = get_slot_info('afternoon')
-            dp = sum([1 for s in [e, m, a] if s['is_p']])
-
-            if dp == 3:
-                badge = 'badge-done'
-            elif dp >= 1:
-                badge = 'badge-pending'
-            else:
-                badge = 'badge-absent'
-
+                if not r: return 'NT'
+                return 'P' if r.is_present else 'A'
+            em = get_slot('early')
+            mo = get_slot('morning')
+            af = get_slot('afternoon')
+            dp = sum([1 for s in [em, mo, af] if s == 'P'])
             day_rows.append({
                 'date': current.strftime('%b %d, %Y'),
                 'day_name': current.strftime('%a'),
-                'early': e['sym'],
-                'early_color': e['color'],
-                'morning': m['sym'],
-                'morning_color': m['color'],
-                'afternoon': a['sym'],
-                'afternoon_color': a['color'],
+                'early': em,
+                'morning': mo,
+                'afternoon': af,
                 'day_present': dp,
-                'day_badge': badge,
                 'is_today': current == today,
             })
             current += timedelta(days=1)
-    
+
     day_rows.reverse()
 
     return render(request, 'admin_worker_detail.html', {
